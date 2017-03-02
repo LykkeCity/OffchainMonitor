@@ -31,7 +31,7 @@ namespace LkeServices.Triggers
             _bindings.AddRange(new TriggerBindingCollector<QueueTriggerBinding>().CollectFromAssemblies(assemblies, _serviceProvider));
 
             var tasks = _bindings.Select(o => o.RunAsync(_cancellationTokenSource.Token)).ToArray();
-            Task.WaitAll(tasks);
+            // Task.WaitAll(tasks);
         }
 
         public void ProvideAssembly(params Assembly[] assemblies)

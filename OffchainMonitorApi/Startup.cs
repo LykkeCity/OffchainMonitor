@@ -77,7 +77,7 @@ namespace OffchainMonitorApi
             triggerHost.ProvideAssembly(GetType().GetTypeInfo().Assembly);
             triggerHost.StartAndBlock();
 
-            return new AutofacServiceProvider(builder.Build());
+            return new AutofacServiceProvider(container);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

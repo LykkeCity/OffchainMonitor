@@ -2,7 +2,17 @@
 
 ## Summary
 
-This is the client app which will be run on client device and will monitor bitcoin blockchain for the commitment which has been agreed not be broadcast. If any of these commitments found to be broadcast, its respective punishment is broadcast to bitcoin network to punish the other party for broadcasting the agreed upon not to be broadcast commitment transaction.
+This the monitor application (in the form of asp.net application), for monitoring Bitcoin blockchain for commitments which should not be broadcasted. If they are found broadcasted, the respective punishment will be broadcasted.
+
+This app is designed to be hosted using Docker.
+
+## Iniitialization
+
+*   The multisig address to be monitored should be specified using /api/Settings/SetMultisig endpoint.
+
+## Api
+
+Api is accessable at /swagger/v1/swagger.json endpoint
 
 ## Related material
 
