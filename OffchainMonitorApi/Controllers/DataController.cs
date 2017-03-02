@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SqlliteRepositories.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,10 +11,37 @@ namespace OffchainMonitorApi.Controllers
     public class DataController : Controller
     {
         [HttpGet("AddCommitmentPunishmentPair")]
-        public IActionResult AddCommitmentPunishmentPair([FromQuery]string commitment,
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> AddCommitmentPunishmentPair([FromQuery]string commitment,
             [FromQuery]string punishment)
         {
-            return Ok();
+            if (string.IsNullOrEmpty(commitment) || string.IsNullOrEmpty(punishment))
+            {
+                return BadRequest("Passed parameters should not be null or empty");
+            }
+            else
+            {
+                try
+                {
+                    using (OffchainMonitorContext context = new OffchainMonitorContext())
+                    {
+                        context.Commitments.Add(new CommitmentEntity
+                        {
+                            Commitment = commitment,
+                            Punishment = punishment
+                        });
+
+                        await context.SaveChangesAsync();
+                    }
+                    return Ok();
+                }
+                catch(Exception exp)
+                {
+                    throw exp;
+                }
+            }
         }
     }
 }

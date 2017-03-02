@@ -8,9 +8,10 @@ using SqlliteRepositories.Model;
 namespace SqlliteRepositories.Migrations
 {
     [DbContext(typeof(OffchainMonitorContext))]
-    partial class OffchainMonitorContextModelSnapshot : ModelSnapshot
+    [Migration("20170227144536_CommitmentAdded")]
+    partial class CommitmentAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.0-rtm-22752");
@@ -53,18 +54,6 @@ namespace SqlliteRepositories.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Log");
-                });
-
-            modelBuilder.Entity("SqlliteRepositories.Model.SettingsEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("Multisig");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Settings");
                 });
         }
     }

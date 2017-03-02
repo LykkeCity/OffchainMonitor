@@ -8,6 +8,8 @@ using Core.Settings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using LkeServices.Triggers;
+using Autofac.Extensions.DependencyInjection;
 
 namespace ApiRunner
 {
@@ -33,6 +35,7 @@ namespace ApiRunner
             Console.WriteLine("Utc time: " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 
             var host = builder.Build();
+            
 
             host.Run();
         }

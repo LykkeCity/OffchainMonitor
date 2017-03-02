@@ -7,6 +7,8 @@ namespace SqlliteRepositories.Model
     public class OffchainMonitorContext : DbContext
     {
         public DbSet<LogEntity> Log { get; set; }
+        public DbSet<CommitmentEntity> Commitments { get; set; }
+        public DbSet<SettingsEntity> Settings { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -25,5 +27,39 @@ namespace SqlliteRepositories.Model
         public string Type { get; set; }
         public string Stack { get; set; }
         public string Msg { get; set; }
+    }
+
+    public class CommitmentEntity
+    {
+        public int Id
+        {
+            get;
+            set;
+        }
+        public string Commitment
+        {
+            get;
+            set;
+        }
+
+        public string Punishment
+        {
+            get;
+            set;
+        }
+    }
+
+    public class SettingsEntity
+    {
+        public int Id
+        {
+            get;
+            set;
+        }
+        public string Multisig
+        {
+            get;
+            set;
+        }
     }
 }

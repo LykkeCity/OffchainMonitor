@@ -1,18 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Autofac.Extensions.DependencyInjection;
 using BitcoinApi.Filters;
-using Common.IocContainer;
-using Core.Bitcoin;
-using Core.OpenAssets;
 using Core.Settings;
-using LkeServices.Bitcoin;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,6 +13,8 @@ using Swashbuckle.Swagger.Model;
 using OffchainMonitorApi.Middleware;
 using OffchainMonitorApi.Binder;
 using SqlliteRepositories;
+using LkeServices.Triggers;
+using System.Reflection;
 
 namespace OffchainMonitorApi
 {
@@ -77,6 +71,11 @@ namespace OffchainMonitorApi
 
             var builder = new SqlliteBinder().Bind(settings);
             builder.Populate(services);
+
+            var container = builder.Build();
+            var triggerHost = new TriggerHost(new AutofacServiceProvider(container));
+            triggerHost.ProvideAssembly(GetType().GetTypeInfo().Assembly);
+            triggerHost.StartAndBlock();
 
             return new AutofacServiceProvider(builder.Build());
         }
