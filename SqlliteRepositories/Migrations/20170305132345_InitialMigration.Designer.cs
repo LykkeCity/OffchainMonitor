@@ -8,8 +8,8 @@ using SqlliteRepositories.Model;
 namespace SqlliteRepositories.Migrations
 {
     [DbContext(typeof(OffchainMonitorContext))]
-    [Migration("20170228160948_SettingsAdded")]
-    partial class SettingsAdded
+    [Migration("20170305132345_InitialMigration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -28,6 +28,21 @@ namespace SqlliteRepositories.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Commitments");
+                });
+
+            modelBuilder.Entity("SqlliteRepositories.Model.CommitmentMultisigOutput", b =>
+                {
+                    b.Property<int>("CommitmentId");
+
+                    b.Property<string>("MultisigOutputTxId");
+
+                    b.Property<int>("Outputumber");
+
+                    b.HasKey("CommitmentId", "MultisigOutputTxId", "Outputumber");
+
+                    b.HasIndex("MultisigOutputTxId", "Outputumber");
+
+                    b.ToTable("CommitmentMultisigOutput");
                 });
 
             modelBuilder.Entity("SqlliteRepositories.Model.LogEntity", b =>
@@ -56,6 +71,17 @@ namespace SqlliteRepositories.Migrations
                     b.ToTable("Log");
                 });
 
+            modelBuilder.Entity("SqlliteRepositories.Model.MultisigOutputEntity", b =>
+                {
+                    b.Property<string>("TransactionId");
+
+                    b.Property<int>("OutputNumber");
+
+                    b.HasKey("TransactionId", "OutputNumber");
+
+                    b.ToTable("MultisigOutputs");
+                });
+
             modelBuilder.Entity("SqlliteRepositories.Model.SettingsEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -66,6 +92,19 @@ namespace SqlliteRepositories.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Settings");
+                });
+
+            modelBuilder.Entity("SqlliteRepositories.Model.CommitmentMultisigOutput", b =>
+                {
+                    b.HasOne("SqlliteRepositories.Model.CommitmentEntity", "Commitment")
+                        .WithMany("CommitmentOutputs")
+                        .HasForeignKey("CommitmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SqlliteRepositories.Model.MultisigOutputEntity", "Output")
+                        .WithMany("CommitmentOutputs")
+                        .HasForeignKey("MultisigOutputTxId", "Outputumber")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
         }
     }

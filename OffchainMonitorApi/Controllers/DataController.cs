@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NBitcoin;
 using SqlliteRepositories.Model;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,9 @@ namespace OffchainMonitorApi.Controllers
             }
             else
             {
+                Transaction cTx = new Transaction(commitment);
+                Transaction pTx = new Transaction(punishment);
+
                 try
                 {
                     using (OffchainMonitorContext context = new OffchainMonitorContext())
@@ -33,11 +37,16 @@ namespace OffchainMonitorApi.Controllers
                             Punishment = punishment
                         });
 
+                        for (int i = 0; i < cTx.Inputs.Count; i++)
+                        {
+
+                        }
+
                         await context.SaveChangesAsync();
                     }
                     return Ok();
                 }
-                catch(Exception exp)
+                catch (Exception exp)
                 {
                     throw exp;
                 }
