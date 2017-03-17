@@ -83,12 +83,12 @@ namespace SqlliteRepositories.Migrations
 
             modelBuilder.Entity("SqlliteRepositories.Model.SettingsEntity", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Key")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("Multisig");
+                    b.Property<string>("Value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Key");
 
                     b.ToTable("Settings");
                 });

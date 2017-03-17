@@ -15,6 +15,7 @@ using OffchainMonitorApi.Binder;
 using SqlliteRepositories;
 using LkeServices.Triggers;
 using System.Reflection;
+using Core.Repositories.Transactions;
 
 namespace OffchainMonitorApi
 {
@@ -68,10 +69,9 @@ namespace OffchainMonitorApi
                 options.IncludeXmlComments(xmlPath);
             });
 
-
             var builder = new SqlliteBinder().Bind(settings);
             builder.Populate(services);
-
+            //builder.RegisterControllers(typeof(MvcApplication).Assembly);
             var container = builder.Build();
             var triggerHost = new TriggerHost(new AutofacServiceProvider(container));
             triggerHost.ProvideAssembly(GetType().GetTypeInfo().Assembly);

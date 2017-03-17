@@ -117,12 +117,13 @@ namespace SqlliteRepositories.Model
 
     public class SettingsEntity
     {
-        public int Id
+        [Key]
+        public string Key
         {
             get;
             set;
         }
-        public string Multisig
+        public string Value
         {
             get;
             set;

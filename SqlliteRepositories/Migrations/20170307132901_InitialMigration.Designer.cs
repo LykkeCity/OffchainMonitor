@@ -8,7 +8,7 @@ using SqlliteRepositories.Model;
 namespace SqlliteRepositories.Migrations
 {
     [DbContext(typeof(OffchainMonitorContext))]
-    [Migration("20170305132345_InitialMigration")]
+    [Migration("20170307132901_InitialMigration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -84,12 +84,12 @@ namespace SqlliteRepositories.Migrations
 
             modelBuilder.Entity("SqlliteRepositories.Model.SettingsEntity", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Key")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("Multisig");
+                    b.Property<string>("Value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Key");
 
                     b.ToTable("Settings");
                 });

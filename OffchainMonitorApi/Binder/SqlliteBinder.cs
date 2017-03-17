@@ -4,6 +4,8 @@ using Common;
 using Common.Log;
 using Core.Bitcoin;
 using Core.Settings;
+using LkeServices;
+using SqlliteRepositories;
 using SqlliteRepositories.Log;
 using System;
 using System.Collections.Generic;
@@ -35,8 +37,8 @@ namespace OffchainMonitorApi.Binder
             ioc.RegisterInstance(settings);
             ioc.RegisterInstance(new RpcConnectionParams(settings));
 
-            // ioc.BindCommonServices();
-            // ioc.BindAzure(settings, log);
+            ioc.BindCommonServices();
+            ioc.BindSqllite();
 
             // ioc.RegisterType<RetryFailedTransactionService>().As<IRetryFailedTransactionService>();
 

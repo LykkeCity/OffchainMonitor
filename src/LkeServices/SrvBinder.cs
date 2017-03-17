@@ -20,6 +20,8 @@ using LkeServices.Transactions;
 using PhoneNumbers;
 using QBitNinja.Client;
 using RestClient = RestEase.RestClient;
+using Core.Repositories.Transactions;
+using Core.Repositories.Settings;
 
 namespace LkeServices
 {

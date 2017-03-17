@@ -16,11 +16,9 @@
 
 {
   "version": "1.0.0-*",
-  /*
   "buildOptions": {
     "emitEntryPoint": true
   },
-  */
   "dependencies": {
     "Core": "1.0.0-*",
     "Lykke.AzureStorage": "1.2.5",
