@@ -9,20 +9,6 @@ namespace SqlliteRepositories.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Commitments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Commitment = table.Column<string>(nullable: true),
-                    Punishment = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Commitments", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Log",
                 columns: table => new
                 {
@@ -67,49 +53,43 @@ namespace SqlliteRepositories.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CommitmentMultisigOutput",
+                name: "Commitments",
                 columns: table => new
                 {
-                    CommitmentId = table.Column<int>(nullable: false),
-                    MultisigOutputTxId = table.Column<string>(nullable: false),
-                    Outputumber = table.Column<int>(nullable: false)
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Commitment = table.Column<string>(nullable: true),
+                    CommitmentOutputOutputNumber = table.Column<int>(nullable: true),
+                    CommitmentOutputTransactionId = table.Column<string>(nullable: true),
+                    Punishment = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CommitmentMultisigOutput", x => new { x.CommitmentId, x.MultisigOutputTxId, x.Outputumber });
+                    table.PrimaryKey("PK_Commitments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CommitmentMultisigOutput_Commitments_CommitmentId",
-                        column: x => x.CommitmentId,
-                        principalTable: "Commitments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CommitmentMultisigOutput_MultisigOutputs_MultisigOutputTxId_Outputumber",
-                        columns: x => new { x.MultisigOutputTxId, x.Outputumber },
+                        name: "FK_Commitments_MultisigOutputs_CommitmentOutputTransactionId_CommitmentOutputOutputNumber",
+                        columns: x => new { x.CommitmentOutputTransactionId, x.CommitmentOutputOutputNumber },
                         principalTable: "MultisigOutputs",
                         principalColumns: new[] { "TransactionId", "OutputNumber" },
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_CommitmentMultisigOutput_MultisigOutputTxId_Outputumber",
-                table: "CommitmentMultisigOutput",
-                columns: new[] { "MultisigOutputTxId", "Outputumber" });
+                name: "IX_Commitments_CommitmentOutputTransactionId_CommitmentOutputOutputNumber",
+                table: "Commitments",
+                columns: new[] { "CommitmentOutputTransactionId", "CommitmentOutputOutputNumber" });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "CommitmentMultisigOutput");
+                name: "Commitments");
 
             migrationBuilder.DropTable(
                 name: "Log");
 
             migrationBuilder.DropTable(
                 name: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "Commitments");
 
             migrationBuilder.DropTable(
                 name: "MultisigOutputs");

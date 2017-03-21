@@ -23,17 +23,6 @@ namespace OffchainMonitorApi.Controllers
             settingsRepository = _settingsRepository;
         }
 
-        private async Task<Network> GetNetwork()
-        {
-            string network = await settingsRepository.Get<string>("network");
-            switch(network)
-            {
-                case "main":
-                    return Network.Main;
-                default:
-                    return Network.TestNet;
-            }
-        }
 
         [HttpGet("AddCommitmentPunishmentPair")]
         [ProducesResponseType(200)]
@@ -55,15 +44,15 @@ namespace OffchainMonitorApi.Controllers
                 {
                     using (OffchainMonitorContext context = new OffchainMonitorContext())
                     {
-                        var newlyAddedCommitment = await context.Commitments.AddAsync(new CommitmentEntity
+                        var newlyAddedCommitment = new CommitmentEntity
                         {
                             Commitment = commitment,
                             Punishment = punishment
-                        });
+                        };
 
                         bool found = false;
                         var multisig = await settingsRepository.Get<string>("multisig");
-                        var netwok = await GetNetwork();
+                        var netwok = await Helper.GetNetwork(settingsRepository);
                         for (int i = 0; i < cTx.Inputs.Count; i++)
                         {
                             var prevHash = cTx.Inputs[i].PrevOut.Hash.ToString();
@@ -79,17 +68,17 @@ namespace OffchainMonitorApi.Controllers
                                                               select o).FirstOrDefault();
                                 if(existingMultisigOutput == null)
                                 {
-                                    existingMultisigOutput = new MultisigOutputEntity();
-                                    existingMultisigOutput.TransactionId = prevOut.Hash.ToString();
-                                    existingMultisigOutput.OutputNumber = (int) prevOut.N;
-                                    await context.MultisigOutputs.AddAsync(existingMultisigOutput); ;
+                                    var newMultisigOutput = new MultisigOutputEntity();
+                                    newMultisigOutput.TransactionId = prevOut.Hash.ToString();
+                                    newMultisigOutput.OutputNumber = (int) prevOut.N;
+                                    await context.MultisigOutputs.AddAsync(newMultisigOutput);
+
+                                    existingMultisigOutput = newMultisigOutput;
                                 }
+                                existingMultisigOutput.Commitments.Add(newlyAddedCommitment);
 
-                                CommitmentMultisigOutput commitmetMultisigOutput
-                                    = new CommitmentMultisigOutput { CommitmentId = newlyAddedCommitment.Entity.Id,
-                                        MultisigOutputTxId = prevOut.Hash.ToString(), Outputumber = (int) prevOut.N };
-
-                                await context.CommitmentMultisigOutput.AddAsync(commitmetMultisigOutput);
+                                newlyAddedCommitment.CommitmentOutput = existingMultisigOutput;
+                                await context.Commitments.AddAsync(newlyAddedCommitment);
                             }
                         }
 

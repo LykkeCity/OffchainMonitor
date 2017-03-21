@@ -13,7 +13,6 @@ namespace SqlliteRepositories.Model
         public DbSet<CommitmentEntity> Commitments { get; set; }
         public DbSet<SettingsEntity> Settings { get; set; }
         public DbSet<MultisigOutputEntity> MultisigOutputs { get; set; }
-        public DbSet<CommitmentMultisigOutput> CommitmentMultisigOutput { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -32,28 +31,7 @@ namespace SqlliteRepositories.Model
             // base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<MultisigOutputEntity>()
                 .HasKey(mo => new { mo.TransactionId, mo.OutputNumber });
-            modelBuilder.Entity<CommitmentMultisigOutput>()
-                .HasKey(co => new { co.CommitmentId, co.MultisigOutputTxId, co.Outputumber });
-
-            modelBuilder.Entity<CommitmentMultisigOutput>()
-                .HasOne(co => co.Output)
-                .WithMany(o => o.CommitmentOutputs)
-                .HasForeignKey(co => new { co.MultisigOutputTxId, co.Outputumber });
-
-            modelBuilder.Entity<CommitmentMultisigOutput>()
-                .HasOne(co => co.Commitment)
-                .WithMany(o => o.CommitmentOutputs)
-                .HasForeignKey(co => co.CommitmentId);
         }
-    }
-
-    public class CommitmentMultisigOutput
-    {
-        public int CommitmentId { get; set; }
-        public CommitmentEntity Commitment { get; set; }
-        public string MultisigOutputTxId { get; set; }
-        public int Outputumber { get; set; }
-        public MultisigOutputEntity Output { get; set; }
     }
 
     public class LogEntity
@@ -87,7 +65,9 @@ namespace SqlliteRepositories.Model
             get;
             set;
         }
-        public List<CommitmentMultisigOutput> CommitmentOutputs
+
+        // Each commitment can consume exactly single multisig output
+        public MultisigOutputEntity CommitmentOutput
         {
             get;
             set;
@@ -108,7 +88,7 @@ namespace SqlliteRepositories.Model
             set;
         }
 
-        public List<CommitmentMultisigOutput> CommitmentOutputs
+        public List<CommitmentEntity> Commitments
         {
             get;
             set;

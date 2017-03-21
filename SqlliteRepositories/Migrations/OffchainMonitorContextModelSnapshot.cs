@@ -22,26 +22,17 @@ namespace SqlliteRepositories.Migrations
 
                     b.Property<string>("Commitment");
 
+                    b.Property<int?>("CommitmentOutputOutputNumber");
+
+                    b.Property<string>("CommitmentOutputTransactionId");
+
                     b.Property<string>("Punishment");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CommitmentOutputTransactionId", "CommitmentOutputOutputNumber");
+
                     b.ToTable("Commitments");
-                });
-
-            modelBuilder.Entity("SqlliteRepositories.Model.CommitmentMultisigOutput", b =>
-                {
-                    b.Property<int>("CommitmentId");
-
-                    b.Property<string>("MultisigOutputTxId");
-
-                    b.Property<int>("Outputumber");
-
-                    b.HasKey("CommitmentId", "MultisigOutputTxId", "Outputumber");
-
-                    b.HasIndex("MultisigOutputTxId", "Outputumber");
-
-                    b.ToTable("CommitmentMultisigOutput");
                 });
 
             modelBuilder.Entity("SqlliteRepositories.Model.LogEntity", b =>
@@ -93,17 +84,11 @@ namespace SqlliteRepositories.Migrations
                     b.ToTable("Settings");
                 });
 
-            modelBuilder.Entity("SqlliteRepositories.Model.CommitmentMultisigOutput", b =>
+            modelBuilder.Entity("SqlliteRepositories.Model.CommitmentEntity", b =>
                 {
-                    b.HasOne("SqlliteRepositories.Model.CommitmentEntity", "Commitment")
-                        .WithMany("CommitmentOutputs")
-                        .HasForeignKey("CommitmentId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("SqlliteRepositories.Model.MultisigOutputEntity", "Output")
-                        .WithMany("CommitmentOutputs")
-                        .HasForeignKey("MultisigOutputTxId", "Outputumber")
-                        .OnDelete(DeleteBehavior.Cascade);
+                    b.HasOne("SqlliteRepositories.Model.MultisigOutputEntity", "CommitmentOutput")
+                        .WithMany("Commitments")
+                        .HasForeignKey("CommitmentOutputTransactionId", "CommitmentOutputOutputNumber");
                 });
         }
     }
