@@ -71,10 +71,13 @@ namespace OffchainMonitorApi.Controllers
                                     var newMultisigOutput = new MultisigOutputEntity();
                                     newMultisigOutput.TransactionId = prevOut.Hash.ToString();
                                     newMultisigOutput.OutputNumber = (int) prevOut.N;
+                                    newMultisigOutput.LastSeen = DateTime.UtcNow;
                                     await context.MultisigOutputs.AddAsync(newMultisigOutput);
 
                                     existingMultisigOutput = newMultisigOutput;
                                 }
+
+                                existingMultisigOutput.LastSeen = DateTime.UtcNow;
                                 existingMultisigOutput.Commitments.Add(newlyAddedCommitment);
 
                                 newlyAddedCommitment.CommitmentOutput = existingMultisigOutput;

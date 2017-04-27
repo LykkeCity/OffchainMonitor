@@ -67,6 +67,8 @@ namespace SqlliteRepositories.Migrations
 
                     b.Property<int>("OutputNumber");
 
+                    b.Property<DateTime>("LastSeen");
+
                     b.HasKey("TransactionId", "OutputNumber");
 
                     b.ToTable("MultisigOutputs");

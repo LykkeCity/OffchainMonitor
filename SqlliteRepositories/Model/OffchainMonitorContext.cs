@@ -88,6 +88,12 @@ namespace SqlliteRepositories.Model
             set;
         }
 
+        public DateTime LastSeen
+        {
+            get;
+            set;
+        }
+
         public List<CommitmentEntity> Commitments
         {
             get;

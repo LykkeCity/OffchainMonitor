@@ -33,7 +33,8 @@ namespace SqlliteRepositories.Migrations
                 columns: table => new
                 {
                     TransactionId = table.Column<string>(nullable: false),
-                    OutputNumber = table.Column<int>(nullable: false)
+                    OutputNumber = table.Column<int>(nullable: false),
+                    LastSeen = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {

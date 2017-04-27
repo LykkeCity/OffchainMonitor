@@ -8,7 +8,7 @@ using SqlliteRepositories.Model;
 namespace SqlliteRepositories.Migrations
 {
     [DbContext(typeof(OffchainMonitorContext))]
-    [Migration("20170321033548_InitialMigration")]
+    [Migration("20170322122101_InitialMigration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -67,6 +67,8 @@ namespace SqlliteRepositories.Migrations
                     b.Property<string>("TransactionId");
 
                     b.Property<int>("OutputNumber");
+
+                    b.Property<DateTime>("LastSeen");
 
                     b.HasKey("TransactionId", "OutputNumber");
 
