@@ -20,6 +20,10 @@ namespace BlockchainStateManager.Helpers
         Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionForTimeActivatePart(string commitmentTransactionHex,
             BitcoinSecret spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName,
             PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub);
-        
+
+        Task<CreateUnsignedCommitmentTransactionsResponse> CreateUnsignedCommitmentTransactions(string signedSetupTransaction, string clientPubkey,
+            string hubPubkey, double clientAmount, double hubAmount, string assetName, string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub);
+
+
     }
 }

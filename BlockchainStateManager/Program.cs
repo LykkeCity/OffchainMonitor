@@ -29,11 +29,20 @@ namespace BlockchainStateManager
 
         static void Main(string[] args)
         {
+            string[] reservedPrivateKey = new string[] {
+            "cQMqC1Vqyi6o62wE1Z1ZeWDbMCkRDZW5dMPJz8QT9uMKQaMZa8JY",
+            "cQyt2zxAS2uV7HJWR9hf16pFDTye8YsGL6hzd9pQzMoo9m24RGoV",
+            "cSFbgd8zKDSCDHgGocccngyVSfGZsyZFiTXtimTonHyL44gTKTNU",  // 03eb5b1a93a77d6743bd4657614d87f4d2d40566558d4c8faab188d957c32c1976
+            "cPBtsvLrD3DnbdGgDZ2EMbZnQurzBVmgmejiMv55jH9JehPDn5Aq"   // 035441d55de4f28fcb967472a1f9790ecfea9a9a2a92e301646d52cb3290b9e355
+            };
+
             settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
             daemonHelper = Bootstrap.container.Resolve<IDaemonHelper>();
             offchianClient = Bootstrap.container.Resolve<IOffchainClient>();
             transactionBroadcaster = Bootstrap.container.Resolve<ITransactionBroacaster>();
             feeManager = Bootstrap.container.Resolve<IFeeManager>();
+
+            PutBlockchainInAKnownState(reservedPrivateKey).Wait();
         }
 
         private static async Task<UnsignedClientCommitmentTransactionResponse> GetOffchainSignedSetup
@@ -86,7 +95,7 @@ namespace BlockchainStateManager
                 set;
             }
         }
-
+        /*
         private static string GetUrlForCommitmentCreation(string baseUrl, string signedSetupTransaction, string clientPubkey,
             string hubPubkey, double clientAmount, double hubAmount, string assetName, string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
         {
@@ -95,9 +104,11 @@ namespace BlockchainStateManager
                 baseUrl, signedSetupTransaction, clientPubkey, hubPubkey, clientAmount, hubAmount, assetName,
                 lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub);
         }
-
-        public static async Task PutBlockchainInAKnownState(Settings.Settings settings, string[] privateKeys)
+        */
+        public static async Task PutBlockchainInAKnownState(string[] privateKeys)
         {
+            var settings = settingsProvider.GetSettings();
+
             try
             {
                 var clientPrivateKey = new BitcoinSecret(privateKeys[0]);
@@ -109,6 +120,9 @@ namespace BlockchainStateManager
                 await transactionBroadcaster.BroadcastTransactionToBlockchain
                     (signedResp.FullySignedSetupTransaction);
 
+                var unsignedCommitment = await offchianClient.CreateUnsignedCommitmentTransactions(signedResp.FullySignedSetupTransaction, clientPrivateKey.PubKey.ToHex(),
+                    hubPrivateKey.PubKey.ToHex(), 40, 65, "TestExchangeUSD", clientPrivateKey.PubKey.ToHex(), 10, false);
+                /*
                 var url = GetUrlForCommitmentCreation(settings.WalletBackendUrl, signedResp.FullySignedSetupTransaction, clientPrivateKey.PubKey.ToHex(),
                     hubPrivateKey.PubKey.ToHex(), 40, 65, "TestExchangeUSD", clientPrivateKey.PubKey.ToHex(), 10, false);
 
@@ -121,7 +135,7 @@ namespace BlockchainStateManager
                     unsignedCommitment =
                         JsonConvert.DeserializeObject<CreateUnsignedCommitmentTransactionsResponse>(response);
                 }
-
+                */
                 var clientSignedCommitment = await Helper.SignTransactionWorker(new TransactionSignRequest
                 {
                     TransactionToSign = signedResp.UnsignedClientCommitment0,
@@ -140,7 +154,7 @@ namespace BlockchainStateManager
                 var commitmentSpendingResp = await offchianClient.CreateCommitmentSpendingTransactionForTimeActivatePart(txSendingResult.ToHex(), hubPrivateKey,
                     clientPrivateKey.PubKey, hubPrivateKey.PubKey, "TestExchangeUSD", hubSelfRevokKey.PubKey, 144, true);
 
-                
+
             }
             catch (Exception exp)
             {

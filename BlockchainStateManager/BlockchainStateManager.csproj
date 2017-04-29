@@ -99,7 +99,12 @@
     <Compile Include="Helpers\ITransactionBroacaster.cs" />
     <Compile Include="Helpers\LykkeExtenddedRPCClient.cs" />
     <Compile Include="Helpers\QBitNinjaHelper.cs" />
+    <Compile Include="Helpers\ShellHelper.cs" />
+    <Compile Include="Helpers\TaskHelper\AzureStorageTaskHelper.cs" />
+    <Compile Include="Helpers\TaskHelper\BitcoinTaskHelper.cs" />
+    <Compile Include="Helpers\TaskHelper\QBitninjaTaskHelper.cs" />
     <Compile Include="Helpers\WalletBackendOffchainClient.cs" />
+    <Compile Include="Helpers\TaskHelper\WalletbackEndTaskHelper.cs" />
     <Compile Include="Models\GetCoinsForWalletReturnType.cs" />
     <Compile Include="Models\GetOrdinaryCoinsForWalletReturnType.cs" />
     <Compile Include="Models\GetScriptCoinsForWalletReturnType.cs" />

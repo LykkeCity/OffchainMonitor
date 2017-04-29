@@ -75,5 +75,23 @@ namespace BlockchainStateManager.Helpers
                 return commitmentSpendingResp;
             }
         }
+
+        public async Task<CreateUnsignedCommitmentTransactionsResponse> CreateUnsignedCommitmentTransactions(string signedSetupTransaction, string clientPubkey,
+            string hubPubkey, double clientAmount, double hubAmount, string assetName, string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
+        {
+            var settings = settingsProvider.GetSettings();
+
+            var url = string.Format("{0}/Offchain/CreateUnsignedCommitmentTransactions?signedSetupTransaction={1}&clientPubkey={2}&hubPubkey={3}&clientAmount={4}&hubAmount={5}&assetName={6}&lockingPubkey={7}&activationIn10Minutes={8}&clientSendsCommitmentToHub={9}",
+                settings.WalletBackendUrl, signedSetupTransaction, clientPubkey, hubPubkey, clientAmount, hubAmount, assetName,
+                lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub);
+            using (HttpClient client = new HttpClient())
+            {
+                var response = await client.GetStringAsync(url);
+                var unsignedCommitment =
+                   JsonConvert.DeserializeObject<CreateUnsignedCommitmentTransactionsResponse>(response);
+
+                return unsignedCommitment;
+            }
+        }
     }
 }
