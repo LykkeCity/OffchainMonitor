@@ -19,11 +19,14 @@ namespace BlockchainStateManager.Helpers
             get;
             set;
         }
-        IDaemonHelper daemonHelper = null;
-        public AbstractBlockchainExplorerHelper(ISettingsProvider _settingsProvider, IDaemonHelper _daemonHelper)
+        public IDaemonHelper daemonHelper
+        {
+            get;
+            set;
+        }
+        public AbstractBlockchainExplorerHelper(ISettingsProvider _settingsProvider)
         {
             SettingsProvider = _settingsProvider;
-            daemonHelper = _daemonHelper;
         }
         public abstract Task<bool> HasTransactionIndexed(string txId, string dummy);
         public abstract Task<bool> HasBlockIndexed(string blockId, string dummy);

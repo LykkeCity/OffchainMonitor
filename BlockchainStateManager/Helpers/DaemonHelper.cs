@@ -11,13 +11,18 @@ namespace BlockchainStateManager.Helpers
     public class DaemonHelper : IDaemonHelper
     {
         ISettingsProvider settingsProvider = null;
-        IBlockchainExplorerHelper blockchainExplorerHelper = null;
 
-        public DaemonHelper(ISettingsProvider _settingsProvider, IBlockchainExplorerHelper _blockchainExplorerHelper)
+        public IBlockchainExplorerHelper blockchainExplorerHelper
+        {
+            get;
+            set;
+        }
+
+        public DaemonHelper(ISettingsProvider _settingsProvider)
         {
             settingsProvider = _settingsProvider;
-            blockchainExplorerHelper = _blockchainExplorerHelper;
         }
+
         public async Task<IEnumerable<string>> GenerateBlocks(int count)
         {
             List<string> blockIds = new List<string>();

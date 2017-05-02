@@ -11,8 +11,8 @@ namespace BlockchainStateManager.Helpers
 {
     public class QBitNinjaHelper : AbstractBlockchainExplorerHelper
     {
-        public QBitNinjaHelper(ISettingsProvider _settingsProvider, IDaemonHelper _daemonHelper) :
-            base(_settingsProvider, _daemonHelper)
+        public QBitNinjaHelper(ISettingsProvider _settingsProvider) :
+            base(_settingsProvider)
         {
         }
         public async Task<bool> IsUrlSuccessful(string url)

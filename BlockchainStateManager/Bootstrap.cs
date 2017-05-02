@@ -16,10 +16,18 @@ namespace BlockchainStateManager
         {
             var builder = new ContainerBuilder();
 
-            builder.RegisterType<SettingsProvider>().As<ISettingsProvider>();
-            builder.RegisterType<DaemonHelper>().As<IDaemonHelper>();
-            builder.RegisterType<WalletBackendOffchainClient>().As<IOffchainClient>();
-            builder.RegisterType<BitcoinDaemonTransactionBroadcaster>().As<ITransactionBroacaster>();
+            builder.RegisterType<SettingsProvider>().InstancePerLifetimeScope()
+                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<ISettingsProvider>();
+            builder.RegisterType<DaemonHelper>().InstancePerLifetimeScope()
+                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<IDaemonHelper>();
+            builder.RegisterType<WalletBackendOffchainClient>().InstancePerLifetimeScope()
+                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<IOffchainClient>();
+            builder.RegisterType<BitcoinDaemonTransactionBroadcaster>().InstancePerLifetimeScope()
+                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<ITransactionBroacaster>();
+            builder.RegisterType<QBitNinjaHelper>().InstancePerLifetimeScope()
+                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<IBlockchainExplorerHelper>();
+            builder.RegisterType<FeeManager>().InstancePerLifetimeScope()
+                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<IFeeManager>();
 
             container = builder.Build();
         }

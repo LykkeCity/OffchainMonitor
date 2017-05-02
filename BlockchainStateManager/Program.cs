@@ -1,14 +1,11 @@
 ﻿using Autofac;
 using BlockchainStateManager.Helpers;
+using BlockchainStateManager.Helpers.TaskHelper;
 using BlockchainStateManager.Models;
 using BlockchainStateManager.Settings;
 using BlockchainStateManager.Transactions.Responses;
-using LykkeWalletServices.Transactions.Responses;
 using NBitcoin;
-using NColorCore.RPC;
-using Newtonsoft.Json;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using static BlockchainStateManager.Helper;
 
@@ -21,6 +18,11 @@ namespace BlockchainStateManager
         public static IOffchainClient offchianClient = null;
         public static ITransactionBroacaster transactionBroadcaster = null;
         public static IFeeManager feeManager = null;
+
+        private static AzureStorageTaskHelper azureStorageTaskHelper = null;
+        private static WalletbackEndTaskHelper walletbackendTaskHelper = null;
+        private static BitcoinTaskHelper bitcoinTaskHelper = null;
+        private static QBitninjaTaskHelper qbitninjaTaskHelper = null;
 
         static Program()
         {
@@ -42,7 +44,15 @@ namespace BlockchainStateManager
             transactionBroadcaster = Bootstrap.container.Resolve<ITransactionBroacaster>();
             feeManager = Bootstrap.container.Resolve<IFeeManager>();
 
-            PutBlockchainInAKnownState(reservedPrivateKey).Wait();
+            azureStorageTaskHelper = new AzureStorageTaskHelper(settingsProvider);
+            bitcoinTaskHelper = new BitcoinTaskHelper(settingsProvider);
+            qbitninjaTaskHelper = new QBitninjaTaskHelper(settingsProvider);
+            walletbackendTaskHelper = new WalletbackEndTaskHelper(settingsProvider);
+
+            if(!PutBlockchainInAKnownState(reservedPrivateKey).Result)
+            {
+                System.Console.WriteLine("Error putting blockchain in a known state.");
+            }
         }
 
         private static async Task<UnsignedClientCommitmentTransactionResponse> GetOffchainSignedSetup
@@ -105,7 +115,9 @@ namespace BlockchainStateManager
                 lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub);
         }
         */
-        public static async Task PutBlockchainInAKnownState(string[] privateKeys)
+
+
+        public static async Task<bool> PutBlockchainInAKnownState(string[] privateKeys)
         {
             var settings = settingsProvider.GetSettings();
 
@@ -116,26 +128,30 @@ namespace BlockchainStateManager
                 var clientSelfRevokeKey = new BitcoinSecret(privateKeys[2]);
                 var hubSelfRevokKey = new BitcoinSecret(privateKeys[3]);
 
+                if(!azureStorageTaskHelper.ClearAzureTables())
+                {
+                    return false;
+                }
+
+                if(!bitcoinTaskHelper.EmptyBitcoinDirectiry())
+                {
+                    return false;
+                }
+
+                if(!await bitcoinTaskHelper.StartClearVersionOfBitcoinRegtest())
+                {
+                    return false;
+                }
+
+                return true;
+
                 var signedResp = await GetOffchainSignedSetup(privateKeys);
                 await transactionBroadcaster.BroadcastTransactionToBlockchain
                     (signedResp.FullySignedSetupTransaction);
 
                 var unsignedCommitment = await offchianClient.CreateUnsignedCommitmentTransactions(signedResp.FullySignedSetupTransaction, clientPrivateKey.PubKey.ToHex(),
                     hubPrivateKey.PubKey.ToHex(), 40, 65, "TestExchangeUSD", clientPrivateKey.PubKey.ToHex(), 10, false);
-                /*
-                var url = GetUrlForCommitmentCreation(settings.WalletBackendUrl, signedResp.FullySignedSetupTransaction, clientPrivateKey.PubKey.ToHex(),
-                    hubPrivateKey.PubKey.ToHex(), 40, 65, "TestExchangeUSD", clientPrivateKey.PubKey.ToHex(), 10, false);
-
-                string response;
-                CreateUnsignedCommitmentTransactionsResponse unsignedCommitment;
-
-                using (HttpClient client = new HttpClient())
-                {
-                    response = await client.GetStringAsync(url);
-                    unsignedCommitment =
-                        JsonConvert.DeserializeObject<CreateUnsignedCommitmentTransactionsResponse>(response);
-                }
-                */
+                
                 var clientSignedCommitment = await Helper.SignTransactionWorker(new TransactionSignRequest
                 {
                     TransactionToSign = signedResp.UnsignedClientCommitment0,
