@@ -30,6 +30,7 @@ namespace BlockchainStateManager.Settings
             settings.Network = config.AppSettings.Settings["Network"].Value.ToLower().Equals("main") ? NBitcoin.Network.Main : NBitcoin.Network.TestNet;
             settings.QBitNinjaBaseUrl = config.AppSettings.Settings["QBitNinjaBaseUrl"]?.Value;
             settings.WalletBackendUrl = config.AppSettings.Settings["WalletBackendUrl"]?.Value;
+            settings.ColorCorePort = int.Parse(config.AppSettings.Settings["ColorCorePort"]?.Value);
         }
 
         public Settings GetSettings()

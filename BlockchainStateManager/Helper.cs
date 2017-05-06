@@ -13,10 +13,12 @@ namespace BlockchainStateManager
     public class Helper
     {
         static IDaemonHelper daemonHelper = null;
+        static ISettingsProvider settingsProvider = null;
 
         static Helper()
         {
             daemonHelper = Bootstrap.container.Resolve<IDaemonHelper>();
+            settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
         }
 
         public static async Task<string> SignTransactionWorker(TransactionSignRequest signRequest,
@@ -99,15 +101,17 @@ namespace BlockchainStateManager
 
         public static Multisig GetMultiSigFromTwoPubKeys(string clientPubkey, string hubPubkey)
         {
+            var settings = settingsProvider.GetSettings();
+            var network = settings.Network;
+
             var multiSigAddress = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, new PubKey[] { new PubKey(clientPubkey) ,
                 (new PubKey(hubPubkey)) });
-            var multiSigAddressFormat = multiSigAddress.GetScriptAddress(WebSettings.ConnectionParams.BitcoinNetwork).ToString();
+            var multiSigAddressFormat = multiSigAddress.GetScriptAddress(network).ToString();
 
             var retValue = new Multisig();
             retValue.MultiSigAddress = multiSigAddressFormat;
             retValue.MultiSigScript = multiSigAddress.ToString();
-            retValue.WalletAddress = (new PubKey(clientPubkey)).GetAddress(WebSettings.ConnectionParams.BitcoinNetwork)
-                .ToString();
+            retValue.WalletAddress = (new PubKey(clientPubkey)).GetAddress(network).ToString();
             return retValue;
         }
 
@@ -141,7 +145,8 @@ namespace BlockchainStateManager
             builder.Port = setting.ColorCorePort;
             var uri = builder.Uri;
 
-            return new NColorCore.RPC.RPCClient(null, uri);
+            return new NColorCore.RPC.RPCClient(new System.Net.NetworkCredential(setting.RegtestRPCUsername, setting.RegtestRPCPassword),
+                uri);
         }
 
         public static LykkeExtenddedRPCClient GetRPCClient(Settings.Settings setting)

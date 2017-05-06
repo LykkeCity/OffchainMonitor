@@ -15,6 +15,10 @@ using System.Threading.Tasks;
 using NBitcoin.RPC;
 using NBitcoin.DataEncoders;
 using NBitcoin;
+using System.Collections.Specialized;
+using System.Web.NBitcoin;
+using System.Web;
+using System.Net.Http;
 
 namespace NColorCore.RPC
 {
@@ -92,7 +96,7 @@ namespace NColorCore.RPC
             return SendCommand(commandName.ToString(), paramNames, parameters);
         }
 
-        public uint256 IssueAsset(BitcoinAddress sourceAddress, BitcoinAddress toAddress, int amount)
+        public uint256 IssueAsset(BitcoinAddress sourceAddress, BitcoinColoredAddress toAddress, int amount)
         {
             uint256 txid = null;
             try
@@ -106,7 +110,7 @@ namespace NColorCore.RPC
             return txid;
         }
 
-        public async Task<uint256> IssueAssetAsync(BitcoinAddress sourceAddress, BitcoinAddress toAddress, int amount)
+        public async Task<uint256> IssueAssetAsync(BitcoinAddress sourceAddress, BitcoinColoredAddress toAddress, int amount)
         {
             List<object> parameters = new List<object>();
             parameters.Add(sourceAddress.ToString());
@@ -115,7 +119,7 @@ namespace NColorCore.RPC
             List<string> paramNames = new List<string>();
             paramNames.Add("address");
             paramNames.Add("amount");
-
+            
             if(toAddress != null)
             {
                 parameters.Add(toAddress.ToString());
@@ -123,21 +127,9 @@ namespace NColorCore.RPC
             }
             
             var resp = await SendCommandAsync(RPCOperations.issueasset, paramNames.ToArray(), parameters.ToArray()).ConfigureAwait(false);
-            return uint256.Parse(resp.Result.ToString());
+            return uint256.Parse(resp.Result.ToString().Replace("\"", string.Empty));
         }
 
-        /*
-        public BitcoinAddress GetNewAddress()
-        {
-            return BitcoinAddress.Create(SendCommand(RPCOperations.getnewaddress).Result.ToString(), Network);
-        }
-
-        public async Task<BitcoinAddress> GetNewAddressAsync()
-        {
-            var result = await SendCommandAsync(RPCOperations.getnewaddress).ConfigureAwait(false);
-            return BitcoinAddress.Create(result.Result.ToString(), Network);
-        }
-        */
 
         public Task<RPCResponse> SendCommandAsync(RPCOperations commandName, string[] paramNames, object[] parameters)
         {
@@ -175,56 +167,55 @@ namespace NColorCore.RPC
 
         public async Task<RPCResponse> SendCommandAsync(RPCRequest request, bool throwIfRPCError = true)
         {
-            var webRequest = (HttpWebRequest)WebRequest.Create(Address);
-            webRequest.Headers[HttpRequestHeader.Authorization] = "Basic " + Encoders.Base64.EncodeData(Encoders.ASCII.DecodeData(_Authentication));
-            webRequest.ContentType = "application/json-rpc";
-            webRequest.Method = "POST";
-
-            var writer = new StringWriter();
-            request.WriteJSON(writer);
-            writer.Flush();
-            var json = writer.ToString();
-            var bytes = Encoding.UTF8.GetBytes(json);
-#if !(PORTABLE || NETCORE)
-            webRequest.ContentLength = bytes.Length;
-#endif
-            var dataStream = await webRequest.GetRequestStreamAsync().ConfigureAwait(false);
-            await dataStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
-            await dataStream.FlushAsync().ConfigureAwait(false);
-            dataStream.Dispose();
             RPCResponse response;
-            WebResponse webResponse = null;
-            WebResponse errorResponse = null;
+            var url = string.Format("{0}{1}", Address, request.Method);
+
+            NameValueCollection outgoingQueryString = System.Web.HttpUtility.ParseQueryString(String.Empty);
+            IList<KeyValuePair<string, string>> keyValuepair = new List<KeyValuePair<string, string>>();
+
+            for (int i = 0; i < request.ParamNames.Count(); i++)
+            {
+                outgoingQueryString.Add(request.ParamNames[i], request.Params[i].ToString());
+
+                keyValuepair.Add(new KeyValuePair<string, string>(request.ParamNames[i], request.Params[i].ToString()));
+            }
+
             try
             {
-                webResponse = await webRequest.GetResponseAsync().ConfigureAwait(false);
-                response = RPCResponse.Load(await ToMemoryStreamAsync(webResponse.GetResponseStream()).ConfigureAwait(false));
+                HttpClient client = new HttpClient();
+                var result = await client.PostAsync(url, new FormUrlEncodedContent(keyValuepair));
 
-                if (throwIfRPCError)
-                    response.ThrowIfError();
-            }
-            catch (WebException ex)
-            {
-                if (ex.Response == null || ex.Response.ContentLength == 0)
-                    throw;
-                errorResponse = ex.Response;
-                response = RPCResponse.Load(await ToMemoryStreamAsync(errorResponse.GetResponseStream()).ConfigureAwait(false));
-                if (throwIfRPCError)
-                    response.ThrowIfError();
-            }
-            finally
-            {
-                if (errorResponse != null)
+                if (!result.IsSuccessStatusCode)
                 {
-                    errorResponse.Dispose();
-                    errorResponse = null;
+                    RPCErrorCode errorCode;
+                    switch (result.StatusCode)
+                    {
+                        case HttpStatusCode.BadRequest:
+                            errorCode = RPCErrorCode.RPC_INVALID_REQUEST;
+                            break;
+                        case HttpStatusCode.Forbidden:
+                            errorCode = RPCErrorCode.RPC_FORBIDDEN_BY_SAFE_MODE;
+                            break;
+                        case HttpStatusCode.InternalServerError:
+                            errorCode = RPCErrorCode.RPC_INTERNAL_ERROR;
+                            break;
+                        default:
+                            errorCode = RPCErrorCode.RPC_MISC_ERROR;
+                            break;
+                    }
+
+                    response = new RPCResponse(null, new RPCError { Code = errorCode, Message = result.ReasonPhrase });
                 }
-                if (webResponse != null)
+                else
                 {
-                    webResponse.Dispose();
-                    webResponse = null;
+                    response = new RPCResponse(await result.Content.ReadAsStringAsync(), null);
                 }
             }
+            catch (Exception exp)
+            {
+                throw exp;
+            }
+
             return response;
         }
 

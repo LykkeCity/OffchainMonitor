@@ -18,7 +18,7 @@ namespace BlockchainStateManager.Helpers.TaskHelper
             settingsProvider = _settingsProvider;
         }
 
-        private async Task<bool> StartQBitNinjaListener()
+        public async Task<bool> StartQBitNinjaListener()
         {
             var settings = settingsProvider.GetSettings();
 

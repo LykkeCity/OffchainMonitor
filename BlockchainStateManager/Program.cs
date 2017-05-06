@@ -24,6 +24,8 @@ namespace BlockchainStateManager
         private static BitcoinTaskHelper bitcoinTaskHelper = null;
         private static QBitninjaTaskHelper qbitninjaTaskHelper = null;
 
+        static BitcoinSecret usdAssetPrivateKey = new BitcoinSecret("cQc1KwWUg5jPZG8PC7xisJ82GSBdafpdhhNBvwSqZCcJuafX96BL"); // TestExchangeUSD;
+
         static Program()
         {
             Bootstrap.Start();
@@ -68,12 +70,11 @@ namespace BlockchainStateManager
                 hubPrivateKey.PubKey.ToString());
 
             var coloredRPC = GetColoredRPCClient(settings);
-            var assetName = "TestExchangeUSD";
-            var usdAssetPrivateKey = new BitcoinSecret("cQc1KwWUg5jPZG8PC7xisJ82GSBdafpdhhNBvwSqZCcJuafX96BL");
-            await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress(), 100);
-            await coloredRPC.IssueAssetAsync(hubPrivateKey.GetAddress(), clientPrivateKey.GetAddress(), 100);
-            await coloredRPC.IssueAssetAsync(BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress,
-                clientPrivateKey.GetAddress(), 85);
+            //var txId = await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress().ToColoredAddress(), 8500);         
+            await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress().ToColoredAddress(), 100);
+            await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), hubPrivateKey.GetAddress().ToColoredAddress(), 100);
+            await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress(),
+                85);
 
             var unsignedChannelsetup = await offchianClient.GenerateUnsignedChannelSetupTransaction
                 (clientPrivateKey.PubKey, 10, hubPrivateKey.PubKey, 10, "TestExchangeUSD", 7);
@@ -116,6 +117,35 @@ namespace BlockchainStateManager
         }
         */
 
+        private static async Task<bool> StartRequiredJobs()
+        {
+            if (!azureStorageTaskHelper.ClearAzureTables())
+            {
+                return false;
+            }
+
+            if (!bitcoinTaskHelper.EmptyBitcoinDirectiry())
+            {
+                return false;
+            }
+
+            if (!await bitcoinTaskHelper.StartClearVersionOfBitcoinRegtest())
+            {
+                return false;
+            }
+
+            if (!await qbitninjaTaskHelper.StartQBitNinjaListener())
+            {
+                return false;
+            }
+
+            if(!await walletbackendTaskHelper.StartWalletBackend())
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         public static async Task<bool> PutBlockchainInAKnownState(string[] privateKeys)
         {
@@ -127,25 +157,21 @@ namespace BlockchainStateManager
                 var hubPrivateKey = new BitcoinSecret(privateKeys[1]);
                 var clientSelfRevokeKey = new BitcoinSecret(privateKeys[2]);
                 var hubSelfRevokKey = new BitcoinSecret(privateKeys[3]);
-
-                if(!azureStorageTaskHelper.ClearAzureTables())
+                var usdPrivateKey = new BitcoinSecret("cQc1KwWUg5jPZG8PC7xisJ82GSBdafpdhhNBvwSqZCcJuafX96BL");
+                
+                if(!await StartRequiredJobs())
                 {
                     return false;
                 }
 
-                if(!bitcoinTaskHelper.EmptyBitcoinDirectiry())
-                {
-                    return false;
-                }
-
-                if(!await bitcoinTaskHelper.StartClearVersionOfBitcoinRegtest())
-                {
-                    return false;
-                }
-
-                return true;
-
+                var bitcoinRPCCLient = GetRPCClient(settings);
+                var blkIds = await bitcoinRPCCLient.GenerateBlocksAsync(201);
+                await bitcoinRPCCLient.ImportPrivKeyAsync(usdPrivateKey);
+                var txId = await bitcoinRPCCLient.SendToAddressAsync(usdPrivateKey.GetAddress(),
+                    new Money(100 * Constants.BTCToSathoshiMultiplicationFactor));
+                    
                 var signedResp = await GetOffchainSignedSetup(privateKeys);
+                return true;
                 await transactionBroadcaster.BroadcastTransactionToBlockchain
                     (signedResp.FullySignedSetupTransaction);
 

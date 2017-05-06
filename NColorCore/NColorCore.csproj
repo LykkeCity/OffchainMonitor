@@ -40,6 +40,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,8 +51,11 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RPC\RPCClient.cs" />
+    <Compile Include="RPC\RPCError.cs" />
+    <Compile Include="RPC\RPCException.cs" />
     <Compile Include="RPC\RPCOperations.cs" />
     <Compile Include="RPC\RPCRequest.cs" />
+    <Compile Include="RPC\RPCResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
