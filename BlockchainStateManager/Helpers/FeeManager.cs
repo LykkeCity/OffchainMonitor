@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BlockchainStateManager.Models;
+using BlockchainStateManager.DB;
 
 namespace BlockchainStateManager.Helpers
 {
@@ -36,18 +37,48 @@ namespace BlockchainStateManager.Helpers
                     return retError;
                 }
 
-                TransactionBuilder builder = new TransactionBuilder();
-                builder.AddKeys(sourceSecret).AddCoins(selectedCoin);
-                for (int i = 0; i < feeCount; i++)
+                try
                 {
-                    builder.Send(destinationSecret.GetAddress(),
-                        new Money(Constants.BTCToSathoshiMultiplicationFactor));
-                }
-                builder.SetChange(sourceSecret.GetAddress());
-                builder.SendFees(new Money(feeCount * 100000));
+                    TransactionBuilder builder = new TransactionBuilder();
+                    builder.AddKeys(sourceSecret).AddCoins(selectedCoin);
+                    for (int i = 0; i < feeCount; i++)
+                    {
+                        builder.Send(destinationSecret.GetAddress(),
+                            new Money(Constants.BTCToSathoshiMultiplicationFactor));
+                    }
+                    builder.SetChange(sourceSecret.GetAddress());
+                    builder.SendFees(new Money(feeCount * 100000));
 
-                var tx = builder.BuildTransaction(true);
-                await transactionBroadcaster.BroadcastTransactionToBlockchain(tx.ToHex());
+                    var tx = builder.BuildTransaction(true);
+                    await transactionBroadcaster.BroadcastTransactionToBlockchain(tx.ToHex());
+
+                    using (FeeContext context = new FeeContext())
+                    {
+                        IList<Fee> fees = new List<Fee>();
+                        var txHash = tx.GetHash().ToString();
+                        for (int i = 0; i < feeCount; i++)
+                        {
+                            fees.Add(new Fee
+                            {
+                                Consumed = false,
+                                TransactionId = txHash,
+                                OutputNumber = i,
+                                Satoshi = Constants.BTCToSathoshiMultiplicationFactor,
+                                PrivateKey = destinationSecret.ToString()
+                            });
+                        }
+                        context.Fees.AddRange(fees);
+
+                        await context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception exp)
+                {
+                    Error.Error retError = new Error.Error();
+                    retError.Message = string.Format("An exception occured {0}.", exp.ToString());
+                    return retError;
+                }
+
                 return null; // No error
             }
 

@@ -14,6 +14,7 @@ namespace BlockchainStateManager.Helpers
         Task<bool> HasTransactionIndexed(string txId, string dummy);
         Task<bool> HasBlockIndexed(string blockId, string dummy);
         Task<bool> HasBalanceIndexed(string txId, string btcAddress);
+        Task<bool> HasBalanceIndexedZeroConfirmation(string txId, string btcAddress);
         Task WaitUntillBlockchainExplorerHasIndexed(Func<string, string, Task<bool>> checkIndexed,
             IEnumerable<string> ids, string id2 = null);
         Task<Transaction[]> GetTransactionsHex(UniversalUnspentOutput[] outputList);

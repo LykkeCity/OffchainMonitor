@@ -54,7 +54,7 @@ namespace BlockchainStateManager.Helpers
             return await HasBalanceIndexedInternal(txId, btcAddress);
         }
 
-        public async Task<bool> HasBalanceIndexedZeroConfirmation(string txId, string btcAddress)
+        public override async Task<bool> HasBalanceIndexedZeroConfirmation(string txId, string btcAddress)
         {
             var settings = SettingsProvider.GetSettings();
 
