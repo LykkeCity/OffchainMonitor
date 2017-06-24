@@ -46,6 +46,7 @@ namespace ApiRunner
             Console.ReadKey();
         }
 
+        /*
         static BaseSettings GetSettings()
         {
             var settingsData = ReadSettingsFile();
@@ -60,8 +61,9 @@ namespace ApiRunner
 
             return settings;
         }
+        */
 
-
+            /*
         static string ReadSettingsFile()
         {
 #if DEBUG
@@ -70,6 +72,7 @@ namespace ApiRunner
 			return File.ReadAllText("settings.json");
 #endif
         }
+        */
 
     }
 }

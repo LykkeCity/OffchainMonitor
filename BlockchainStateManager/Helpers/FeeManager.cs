@@ -11,10 +11,51 @@ using BlockchainStateManager.DB;
 
 namespace BlockchainStateManager.Helpers
 {
+    public static class FeeManagerExtenions
+    {
+        
+        public static async Task<TransactionBuilder> AddEnoughPaymentFee(this TransactionBuilder builder)
+        {
+            var selectedFee = await FeeManager.GetOneFeeCoin();
+            Coin selectedCoin = new Coin(new uint256(selectedFee.TransactionId), selectedFee.OutputNumber,
+                    new Money(selectedFee.Satoshi), new Script(selectedFee.Script));
+            builder.AddKeys(new BitcoinSecret(selectedFee.PrivateKey)).AddCoins(selectedCoin);
+            return builder;
+        }
+    }
     public class FeeManager : IFeeManager
     {
         ITransactionBroacaster transactionBroadcaster = null;
         IBlockchainExplorerHelper explorerHelper = null;
+
+        public static async Task<IList<Fee>> GetFeesForTransaction(Transaction tx)
+        {
+            var fees = new List<Fee>();
+            fees.Add(await GetOneFeeCoin());
+
+            return fees;
+        }
+
+        public static async Task<Fee> GetOneFeeCoin()
+        {
+            using (BlockchainStateManagerContext context = new BlockchainStateManagerContext())
+            {
+                var selectedFee = (from f in context.Fees
+                                   where f.Consumed == false
+                                   select f).FirstOrDefault();
+
+                if(selectedFee == null)
+                {
+                    throw new Exception("No proper fee was found.");
+                }
+
+                selectedFee.Consumed = true;
+
+                await context.SaveChangesAsync();
+
+                return selectedFee;
+            }
+        }
 
         public FeeManager(ITransactionBroacaster _transactionBroadcaster, IBlockchainExplorerHelper _explorerHelper)
         {
@@ -52,11 +93,11 @@ namespace BlockchainStateManager.Helpers
                     var tx = builder.BuildTransaction(true);
                     await transactionBroadcaster.BroadcastTransactionToBlockchain(tx.ToHex());
 
-                    using (FeeContext context = new FeeContext())
+                    using (BlockchainStateManagerContext context = new BlockchainStateManagerContext())
                     {
                         IList<Fee> fees = new List<Fee>();
                         var txHash = tx.GetHash().ToString();
-                        for (int i = 0; i < feeCount; i++)
+                        for (uint i = 0; i < feeCount; i++)
                         {
                             fees.Add(new Fee
                             {
@@ -64,7 +105,8 @@ namespace BlockchainStateManager.Helpers
                                 TransactionId = txHash,
                                 OutputNumber = i,
                                 Satoshi = Constants.BTCToSathoshiMultiplicationFactor,
-                                PrivateKey = destinationSecret.ToString()
+                                PrivateKey = destinationSecret.ToString(),
+                                Script = tx.Outputs[i].ScriptPubKey.ToString()
                             });
                         }
                         context.Fees.AddRange(fees);

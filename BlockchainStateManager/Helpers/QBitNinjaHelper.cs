@@ -1,5 +1,6 @@
 ﻿using BlockchainStateManager.Models;
 using BlockchainStateManager.Settings;
+using NBitcoin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,27 @@ namespace BlockchainStateManager.Helpers
             base(_settingsProvider)
         {
         }
+
+        public override async Task<string> GetTransactionHex(string transactionId)
+        {
+            var settings = SettingsProvider.GetSettings();
+
+            string transactionHex = string.Empty;
+
+            try
+            {
+                QBitNinja.Client.QBitNinjaClient client = new QBitNinja.Client.QBitNinjaClient(settings.QBitNinjaBaseUrl, settings.Network);
+                var qbitNinjaResponse = await client.GetTransaction(new uint256(transactionId));
+                transactionHex = qbitNinjaResponse.Transaction.ToHex();
+            }
+            catch (Exception exp)
+            {
+                throw exp;
+            }
+
+            return transactionHex;
+        }
+
         public async Task<bool> IsUrlSuccessful(string url)
         {
             using (HttpClient client = new HttpClient())

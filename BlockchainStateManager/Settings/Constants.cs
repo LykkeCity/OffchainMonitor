@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BlockchainStateManager.Enum;
+﻿using NBitcoin;
 
 namespace BlockchainStateManager.Settings
 {
@@ -15,5 +10,7 @@ namespace BlockchainStateManager.Settings
         public const uint ConcurrencyRetryCount = 3;
         public const uint NBitcoinColoredCoinOutputInSatoshi = 2730;
         private const int LocktimeMinutesAllowance = 120;
+        public static readonly BitcoinSecret USDAssetPrivateKey = new BitcoinSecret("cQc1KwWUg5jPZG8PC7xisJ82GSBdafpdhhNBvwSqZCcJuafX96BL"); // TestExchangeUSD;
+        public const uint USDAssetMultiplicationFactor = 100;
     }
 }

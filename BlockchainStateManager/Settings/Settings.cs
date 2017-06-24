@@ -1,4 +1,5 @@
-﻿using BlockchainStateManager.Enum;
+﻿using BlockchainStateManager.Assets;
+using BlockchainStateManager.Enum;
 using NBitcoin;
 using System;
 using System.Collections.Generic;

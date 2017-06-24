@@ -19,7 +19,7 @@ namespace BlockchainStateManager.Settings
         public string ConnectionString { get; set; }
         public string LykkeSettingsConnectionString { get; set; }
 
-        public AssetDefinition[] AssetDefinitions { get; set; }
+        public AssetDefinition[] Assets { get; set; }
         public NetworkType NetworkType { get; set; }
         public string exchangePrivateKey { get; set; }
         public string RPCUsername { get; set; }

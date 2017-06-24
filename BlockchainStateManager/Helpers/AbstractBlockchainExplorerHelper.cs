@@ -34,6 +34,7 @@ namespace BlockchainStateManager.Helpers
         public abstract Task<bool> HasBalanceIndexedZeroConfirmation(string txId, string btcAddress);
         public abstract Task WaitUntillBlockchainExplorerHasIndexed(Func<string, string, Task<bool>> checkIndexed,
             IEnumerable<string> ids, string id2 = null);
+        public abstract Task<string> GetTransactionHex(string transactionId);
         protected static ColoredCoin[] GenerateWalletColoredCoins(Transaction[] transactions, UniversalUnspentOutput[] usableOutputs,
             string assetId)
         {

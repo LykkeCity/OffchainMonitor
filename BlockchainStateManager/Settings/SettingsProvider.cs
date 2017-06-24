@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -31,6 +32,7 @@ namespace BlockchainStateManager.Settings
             settings.QBitNinjaBaseUrl = config.AppSettings.Settings["QBitNinjaBaseUrl"]?.Value;
             settings.WalletBackendUrl = config.AppSettings.Settings["WalletBackendUrl"]?.Value;
             settings.ColorCorePort = int.Parse(config.AppSettings.Settings["ColorCorePort"]?.Value);
+            settings.Assets = JsonConvert.DeserializeObject<Assets.AssetDefinition[]>(config.AppSettings.Settings["Assets"]?.Value);
         }
 
         public Settings GetSettings()

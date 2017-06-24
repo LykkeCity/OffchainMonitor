@@ -28,13 +28,13 @@ namespace BlockchainStateManager
         private static BitcoinTaskHelper bitcoinTaskHelper = null;
         private static QBitninjaTaskHelper qbitninjaTaskHelper = null;
 
-        static BitcoinSecret usdAssetPrivateKey = new BitcoinSecret("cQc1KwWUg5jPZG8PC7xisJ82GSBdafpdhhNBvwSqZCcJuafX96BL"); // TestExchangeUSD;
+        
         const int USDMULTIPLICATIONFACTOR = 100;
 
         static Program()
         {
             Bootstrap.Start();
-            Database.SetInitializer(new DropCreateDatabaseAlways<FeeContext>());
+            Database.SetInitializer(new DropCreateDatabaseAlways<BlockchainStateManagerContext>());
         }
 
         static void Main(string[] args)
@@ -78,9 +78,9 @@ namespace BlockchainStateManager
 
             var coloredRPC = GetColoredRPCClient(settings);
             //var txId = await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress().ToColoredAddress(), 8500);         
-            await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress().ToColoredAddress(), 100 * USDMULTIPLICATIONFACTOR);
-            await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), hubPrivateKey.GetAddress().ToColoredAddress(), 100 * USDMULTIPLICATIONFACTOR);
-            await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress(),
+            await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress().ToColoredAddress(), 100 * USDMULTIPLICATIONFACTOR);
+            await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), hubPrivateKey.GetAddress().ToColoredAddress(), 100 * USDMULTIPLICATIONFACTOR);
+            await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress(),
                 85 * USDMULTIPLICATIONFACTOR);
 
             var unsignedChannelsetup = await offchianClient.GenerateUnsignedChannelSetupTransaction

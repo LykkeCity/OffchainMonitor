@@ -17,6 +17,7 @@ namespace BlockchainStateManager.Helpers
         Task<bool> HasBalanceIndexedZeroConfirmation(string txId, string btcAddress);
         Task WaitUntillBlockchainExplorerHasIndexed(Func<string, string, Task<bool>> checkIndexed,
             IEnumerable<string> ids, string id2 = null);
+        Task<string> GetTransactionHex(string transactionId);
         Task<Transaction[]> GetTransactionsHex(UniversalUnspentOutput[] outputList);
         UniversalUnspentOutput[] GetWalletOutputsUncolored(UniversalUnspentOutput[] input);
         UniversalUnspentOutput[] GetWalletOutputsForAsset(UniversalUnspentOutput[] input, string assetId);

@@ -3,7 +3,9 @@ using BlockchainStateManager.Helpers;
 using BlockchainStateManager.Models;
 using BlockchainStateManager.Settings;
 using NBitcoin;
+using NBitcoin.OpenAsset;
 using NBitcoin.RPC;
+using QBitNinja.Client;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,6 +26,8 @@ namespace BlockchainStateManager
         public static async Task<string> SignTransactionWorker(TransactionSignRequest signRequest,
             SigHash sigHash = SigHash.All)
         {
+            var settings = settingsProvider.GetSettings();
+
             Transaction tx = new Transaction(signRequest.TransactionToSign);
             Transaction outputTx = new Transaction(signRequest.TransactionToSign);
             var secret = new BitcoinSecret(signRequest.PrivateKey);
@@ -83,7 +87,8 @@ namespace BlockchainStateManager
 
                 if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 {
-                    var address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(output.ScriptPubKey).GetAddress(WebSettings.ConnectionParams.BitcoinNetwork).ToWif();
+                    var address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(output.ScriptPubKey)
+                        .GetAddress(settings.Network).ToWif();
                     if (address == secret.GetAddress().ToWif())
                     {
                         var hash = Script.SignatureHash(output.ScriptPubKey, tx, i, sigHash);
@@ -113,6 +118,23 @@ namespace BlockchainStateManager
             retValue.MultiSigScript = multiSigAddress.ToString();
             retValue.WalletAddress = (new PubKey(clientPubkey)).GetAddress(network).ToString();
             return retValue;
+        }
+
+        public Asset GetAssetId(string assetName)
+        {
+            var settings = settingsProvider.GetSettings();
+            
+            switch(assetName)
+            {
+                case "TestExchangeUSD":
+                    return new Asset
+                    {
+                        AssetId = new AssetId(Constants.USDAssetPrivateKey.GetAddress().ScriptPubKey).ToString(settings.Network),
+                        MultiplicationFactor = Constants.USDAssetMultiplicationFactor
+                    };
+                default:
+                    return null;
+            }
         }
 
         /*
