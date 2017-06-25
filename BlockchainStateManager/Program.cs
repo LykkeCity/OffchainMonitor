@@ -11,6 +11,8 @@ using System.Data.Entity;
 using System.Threading.Tasks;
 using static BlockchainStateManager.Helper;
 using System.Linq;
+using BlockchainStateManager.Offchain;
+using System.Management.Automation;
 
 namespace BlockchainStateManager
 {
@@ -27,8 +29,11 @@ namespace BlockchainStateManager
         private static WalletbackEndTaskHelper walletbackendTaskHelper = null;
         private static BitcoinTaskHelper bitcoinTaskHelper = null;
         private static QBitninjaTaskHelper qbitninjaTaskHelper = null;
+        private static OffchainHelper offchainHelper = null;
+        private static IISTaskHelper iisTaskHelper = null;
 
-        
+
+
         const int USDMULTIPLICATIONFACTOR = 100;
 
         static Program()
@@ -57,6 +62,8 @@ namespace BlockchainStateManager
             bitcoinTaskHelper = new BitcoinTaskHelper(settingsProvider);
             qbitninjaTaskHelper = new QBitninjaTaskHelper(settingsProvider);
             walletbackendTaskHelper = new WalletbackEndTaskHelper(settingsProvider);
+            iisTaskHelper = new IISTaskHelper();
+            offchainHelper = new OffchainHelper(blockchainExplorerHelper, settingsProvider);
 
             if (!PutBlockchainInAKnownState(reservedPrivateKey).Result)
             {
@@ -77,13 +84,38 @@ namespace BlockchainStateManager
                 hubPrivateKey.PubKey.ToString());
 
             var coloredRPC = GetColoredRPCClient(settings);
-            //var txId = await coloredRPC.IssueAssetAsync(usdAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress().ToColoredAddress(), 8500);         
-            await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), clientPrivateKey.GetAddress().ToColoredAddress(), 100 * USDMULTIPLICATIONFACTOR);
-            await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), hubPrivateKey.GetAddress().ToColoredAddress(), 100 * USDMULTIPLICATIONFACTOR);
-            await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress(),
-                85 * USDMULTIPLICATIONFACTOR);
 
-            var unsignedChannelsetup = await offchianClient.GenerateUnsignedChannelSetupTransaction
+            BitcoinColoredAddress[] addresses = new BitcoinColoredAddress[3];
+            addresses[0] = clientPrivateKey.GetAddress().ToColoredAddress();
+            addresses[1] = hubPrivateKey.GetAddress().ToColoredAddress();
+            addresses[2] = (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress();
+
+            int[] valuesToSend = new int[3];
+            valuesToSend[0] = 100 * USDMULTIPLICATIONFACTOR;
+            valuesToSend[1] = 100 * USDMULTIPLICATIONFACTOR;
+            valuesToSend[2] = 85 * USDMULTIPLICATIONFACTOR;
+
+            uint256[] txIds = new uint256[3];
+
+            for (int i = 0; i < 3; i++)
+            {
+                txIds[i] = await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), addresses[i], valuesToSend[i]);
+            }
+
+            var bitcoinRPCCLient = GetRPCClient(settings);
+            var blkIds = await bitcoinRPCCLient.GenerateBlocksAsync(1);
+            await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
+                (blockchainExplorerHelper.HasBlockIndexed, blkIds);
+
+            for (int i = 0; i < txIds.Count(); i++)
+            {
+                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
+                    (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txIds[i].ToString() });
+                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed(blockchainExplorerHelper.HasBalanceIndexed,
+                    new string[] { txIds[i].ToString() }, addresses[i].Address.ToWif());
+            }
+
+            var unsignedChannelsetup = await offchainHelper.GenerateUnsignedChannelSetupTransaction
                 (clientPrivateKey.PubKey, 10, hubPrivateKey.PubKey, 10, "TestExchangeUSD", 7);
 
             var clientSignedTx = await Helper.SignTransactionWorker(new TransactionSignRequest
@@ -92,7 +124,7 @@ namespace BlockchainStateManager
                 PrivateKey = clientPrivateKey.ToString()
             });
 
-            var unsignedResp = await offchianClient.CreateUnsignedClientCommitmentTransaction
+            var unsignedResp = await offchainHelper.CreateUnsignedClientCommitmentTransaction
                 (unsignedChannelsetup.UnsigndTransaction, clientSignedTx, 30, 75, clientPrivateKey.PubKey,
                  hubPrivateKey.ToString(), "TestExchangeUSD", hubSelfRevokKey.PubKey, 144);
 
@@ -126,6 +158,11 @@ namespace BlockchainStateManager
 
         private static async Task<bool> StartRequiredJobs()
         {
+            if (!iisTaskHelper.Stop())
+            {
+                return false;
+            }
+
             if (!azureStorageTaskHelper.ClearAzureTables())
             {
                 return false;
@@ -142,6 +179,11 @@ namespace BlockchainStateManager
             }
 
             if (!await qbitninjaTaskHelper.StartQBitNinjaListener())
+            {
+                return false;
+            }
+
+            if (!iisTaskHelper.Start())
             {
                 return false;
             }
@@ -188,14 +230,15 @@ namespace BlockchainStateManager
 
                 txId = await bitcoinRPCCLient.SendToAddressAsync(feeSourcePrivateKey.GetAddress(),
                     new Money((feeCount + 1) * Constants.BTCToSathoshiMultiplicationFactor));
-                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
-                    (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txId.ToString() });
-                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
-                    (blockchainExplorerHelper.HasBalanceIndexedZeroConfirmation, new string[] { txId.ToString()}, feeSourcePrivateKey.GetAddress().ToWif() );
 
                 blkIds = await bitcoinRPCCLient.GenerateBlocksAsync(1);
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasBlockIndexed, blkIds);
+
+                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
+                    (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txId.ToString() });
+                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
+                    (blockchainExplorerHelper.HasBalanceIndexed, new string[] { txId.ToString() }, feeSourcePrivateKey.GetAddress().ToWif());
 
                 var error = await feeManager.GenerateFees(feeSourcePrivateKey, feeDestinationPrivateKey, (int)feeCount);
                 if (error != null)
@@ -206,13 +249,11 @@ namespace BlockchainStateManager
 
                 var signedResp = await GetOffchainSignedSetup(privateKeys);
 
-
-                return true;
                 await transactionBroadcaster.BroadcastTransactionToBlockchain
                     (signedResp.FullySignedSetupTransaction);
 
-                var unsignedCommitment = await offchianClient.CreateUnsignedCommitmentTransactions(signedResp.FullySignedSetupTransaction, clientPrivateKey.PubKey.ToHex(),
-                    hubPrivateKey.PubKey.ToHex(), 40, 65, "TestExchangeUSD", clientPrivateKey.PubKey.ToHex(), 10, false);
+                var unsignedCommitment = await offchainHelper.CreateUnsignedCommitmentTransactions(signedResp.FullySignedSetupTransaction, clientPrivateKey.PubKey,
+                    hubPrivateKey.PubKey, 40, 65, "TestExchangeUSD", clientPrivateKey.PubKey, 10, false);
 
                 var clientSignedCommitment = await Helper.SignTransactionWorker(new TransactionSignRequest
                 {
@@ -229,10 +270,10 @@ namespace BlockchainStateManager
                 var txSendingResult = await AddEnoughFeesToTransaction
                     (new Transaction(hubSignedCommitment));
 
-                var commitmentSpendingResp = await offchianClient.CreateCommitmentSpendingTransactionForTimeActivatePart(txSendingResult.ToHex(), hubPrivateKey,
+                var commitmentSpendingResp = await offchainHelper.CreateCommitmentSpendingTransactionForTimeActivatePart(txSendingResult.ToHex(), hubPrivateKey.ToString(),
                     clientPrivateKey.PubKey, hubPrivateKey.PubKey, "TestExchangeUSD", hubSelfRevokKey.PubKey, 144, true);
 
-
+                return true;
             }
             catch (Exception exp)
             {
@@ -254,11 +295,11 @@ namespace BlockchainStateManager
                 txToBeSent = tx;
                 foreach (var item in fees)
                 {
-                    txToBeSent.AddInput(new TxIn(item.Outpoint));
+                    txToBeSent.AddInput(new TxIn(new OutPoint(new uint256(item.TransactionId), item.OutputNumber)));
 
                     TransactionSignRequest feePrivateKeySignRequest = new TransactionSignRequest
                     {
-                        PrivateKey = item.Secret.ToString(),
+                        PrivateKey = item.PrivateKey.ToString(),
                         TransactionToSign = txToBeSent.ToHex()
                     };
                     var feeSignedTransaction = await SignTransactionWorker(feePrivateKeySignRequest,

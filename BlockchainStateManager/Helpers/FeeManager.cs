@@ -17,7 +17,7 @@ namespace BlockchainStateManager.Helpers
         public static async Task<TransactionBuilder> AddEnoughPaymentFee(this TransactionBuilder builder)
         {
             var selectedFee = await FeeManager.GetOneFeeCoin();
-            Coin selectedCoin = new Coin(new uint256(selectedFee.TransactionId), selectedFee.OutputNumber,
+            Coin selectedCoin = new Coin(new uint256(selectedFee.TransactionId), (uint) selectedFee.OutputNumber,
                     new Money(selectedFee.Satoshi), new Script(selectedFee.Script));
             builder.AddKeys(new BitcoinSecret(selectedFee.PrivateKey)).AddCoins(selectedCoin);
             return builder;
@@ -103,7 +103,7 @@ namespace BlockchainStateManager.Helpers
                             {
                                 Consumed = false,
                                 TransactionId = txHash,
-                                OutputNumber = i,
+                                OutputNumber = (int) i,
                                 Satoshi = Constants.BTCToSathoshiMultiplicationFactor,
                                 PrivateKey = destinationSecret.ToString(),
                                 Script = tx.Outputs[i].ScriptPubKey.ToString()
@@ -127,9 +127,9 @@ namespace BlockchainStateManager.Helpers
             return coins.Error;
         }
 
-        public async Task<IExtendedCoin[]> GetFeeCoinsToAddToTransaction(Transaction tx)
+        public async Task<Fee[]> GetFeeCoinsToAddToTransaction(Transaction tx)
         {
-            return null;
+            return new Fee[] { await GetOneFeeCoin() };
         }
     }
 }

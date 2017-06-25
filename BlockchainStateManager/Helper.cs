@@ -104,20 +104,25 @@ namespace BlockchainStateManager
             return outputTx.ToHex();
         }
 
-        public static Multisig GetMultiSigFromTwoPubKeys(string clientPubkey, string hubPubkey)
+        public static Multisig GetMultiSigFromTwoPubKeys(PubKey clientPubkey, PubKey hubPubkey)
         {
             var settings = settingsProvider.GetSettings();
             var network = settings.Network;
 
-            var multiSigAddress = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, new PubKey[] { new PubKey(clientPubkey) ,
-                (new PubKey(hubPubkey)) });
+            var multiSigAddress = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, new PubKey[] { clientPubkey ,
+                hubPubkey });
             var multiSigAddressFormat = multiSigAddress.GetScriptAddress(network).ToString();
 
             var retValue = new Multisig();
             retValue.MultiSigAddress = multiSigAddressFormat;
             retValue.MultiSigScript = multiSigAddress.ToString();
-            retValue.WalletAddress = (new PubKey(clientPubkey)).GetAddress(network).ToString();
+            retValue.WalletAddress = clientPubkey.GetAddress(network).ToString();
             return retValue;
+        }
+
+        public static Multisig GetMultiSigFromTwoPubKeys(string clientPubkey, string hubPubkey)
+        {
+            return GetMultiSigFromTwoPubKeys(new PubKey(clientPubkey), new PubKey(hubPubkey));
         }
 
         public Asset GetAssetId(string assetName)

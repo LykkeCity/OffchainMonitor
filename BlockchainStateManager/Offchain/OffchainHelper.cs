@@ -27,8 +27,8 @@ namespace BlockchainStateManager.Offchain
 
             helper = new Helper();
         }
-        public async Task<UnsignedChannelSetupTransaction> GenerateUnsignedChannelSetupTransaction(string clientPubkey, double clientContributedAmount,
-            string hubPubkey, double hubContributedAmount, string channelAssetName, int channelTimeoutInMinutes)
+        public async Task<UnsignedChannelSetupTransaction> GenerateUnsignedChannelSetupTransaction(PubKey clientPubkey, double clientContributedAmount,
+            PubKey hubPubkey, double hubContributedAmount, string channelAssetName, int channelTimeoutInMinutes)
         {
             var settings = settingsProvider.GetSettings();
 
@@ -65,8 +65,8 @@ namespace BlockchainStateManager.Offchain
             }
         }
 
-        public async Task<UnsignedChannelSetupTransaction> GenerateUnsignedChannelSetupTransactionCore(string clientPubkey,
-            double clientContributedAmount, string hubPubkey, double hubContributedAmount, double multisigNewlyAddedAmount,
+        public async Task<UnsignedChannelSetupTransaction> GenerateUnsignedChannelSetupTransactionCore(PubKey clientPubkey,
+            double clientContributedAmount, PubKey hubPubkey, double hubContributedAmount, double multisigNewlyAddedAmount,
             string channelAssetName, int channelTimeoutInMinutes)
         {
             var settings = settingsProvider.GetSettings();
@@ -75,8 +75,8 @@ namespace BlockchainStateManager.Offchain
             {
                 string txHex = null;
                 var btcAsset = (channelAssetName.ToLower() == "btc");
-                var clientAddress = (new PubKey(clientPubkey)).GetAddress(settings.Network);
-                var hubAddress = (new PubKey(hubPubkey)).GetAddress(settings.Network);
+                var clientAddress = clientPubkey.GetAddress(settings.Network);
+                var hubAddress = hubPubkey.GetAddress(settings.Network);
                 var multisig = Helper.GetMultiSigFromTwoPubKeys(clientPubkey, hubPubkey);
 
                 var asset = settings.Assets.Where(a => a.Name == channelAssetName).FirstOrDefault();
@@ -315,8 +315,8 @@ namespace BlockchainStateManager.Offchain
         }
 
         public async Task<UnsignedClientCommitmentTransactionResponse> CreateUnsignedClientCommitmentTransaction(string UnsignedChannelSetupTransaction,
-            string ClientSignedChannelSetup, double clientCommitedAmount, double hubCommitedAmount, string clientPubkey,
-            string hubPrivatekey, string assetName, string counterPartyRevokePubkey, int activationIn10Minutes)
+            string ClientSignedChannelSetup, double clientCommitedAmount, double hubCommitedAmount, PubKey clientPubkey,
+            string hubPrivatekey, string assetName, PubKey counterPartyRevokePubkey, int activationIn10Minutes)
         {
             try
             {
@@ -324,10 +324,10 @@ namespace BlockchainStateManager.Offchain
                 Transaction clientSignedTx = new Transaction(ClientSignedChannelSetup);
 
                 var hubSecret = new BitcoinSecret(hubPrivatekey);
-                var hubPubkey = hubSecret.PubKey.ToString();
+                var hubPubkey = hubSecret.PubKey;
 
                 var clientSignedVersionOK = await CheckIfClientSignedVersionIsOK(unsignedTx, clientSignedTx,
-                    new PubKey(clientPubkey), new PubKey(hubPubkey));
+                    clientPubkey, hubPubkey);
                 if (!clientSignedVersionOK.Success)
                 {
                     throw new Exception(clientSignedVersionOK.ErrorMessage);
@@ -356,11 +356,11 @@ namespace BlockchainStateManager.Offchain
             }
         }
 
-        private static Script CreateSpecialCommitmentScript(string counterPartyPubkey, string selfPubkey,
-            string counterPartyRevokePubkey, int activationIn10Minutes)
+        private static Script CreateSpecialCommitmentScript(PubKey counterPartyPubkey, PubKey selfPubkey,
+            PubKey counterPartyRevokePubkey, int activationIn10Minutes)
         {
             var multisigScriptOps = PayToMultiSigTemplate.Instance.GenerateScriptPubKey
-                (2, new PubKey[] { new PubKey(selfPubkey), new PubKey(counterPartyRevokePubkey) }).ToOps();
+                (2, new PubKey[] { selfPubkey, counterPartyRevokePubkey }).ToOps();
             List<Op> ops = new List<Op>();
             ops.Add(OpcodeType.OP_IF);
             ops.AddRange(multisigScriptOps);
@@ -368,7 +368,7 @@ namespace BlockchainStateManager.Offchain
             ops.Add(Op.GetPushOp(serialize(activationIn10Minutes)));
             ops.Add(OpcodeType.OP_CHECKSEQUENCEVERIFY);
             ops.Add(OpcodeType.OP_DROP);
-            ops.Add(Op.GetPushOp(Helper.StringToByteArray(counterPartyPubkey)));
+            ops.Add(Op.GetPushOp(Helper.StringToByteArray(counterPartyPubkey.ToString())));
             ops.Add(OpcodeType.OP_CHECKSIG);
             ops.Add(OpcodeType.OP_ENDIF);
 
@@ -411,8 +411,8 @@ namespace BlockchainStateManager.Offchain
         }
 
         public string CreateUnsignnedCommitmentTransaction(string fullySignedSetup, double clientContributedAmount,
-            double hubContributedAmount, string clientPubkey, string hubPubkey, string assetName, bool isClientToHub,
-            string counterPartyRevokePubKey, int activationIn10Minutes, out string errorMessage)
+            double hubContributedAmount, PubKey clientPubkey, PubKey hubPubkey, string assetName, bool isClientToHub,
+            PubKey counterPartyRevokePubKey, int activationIn10Minutes, out string errorMessage)
         {
             var settings = settingsProvider.GetSettings();
 
@@ -456,12 +456,12 @@ namespace BlockchainStateManager.Offchain
 
             var dummyCoinToBeRemoved = new Coin(new uint256(0), 0,
                 new Money(1 * Constants.BTCToSathoshiMultiplicationFactor),
-                (new PubKey(hubPubkey)).GetAddress(settings.Network).ScriptPubKey);
+                hubPubkey.GetAddress(settings.Network).ScriptPubKey);
             builder.AddCoins(dummyCoinToBeRemoved);
             totalInputSatoshi += (long)(1 * Constants.BTCToSathoshiMultiplicationFactor);
 
-            var clientAddress = (new PubKey(clientPubkey)).GetAddress(settings.Network);
-            var hubAddress = (new PubKey(hubPubkey)).GetAddress(settings.Network);
+            var clientAddress = clientPubkey.GetAddress(settings.Network);
+            var hubAddress = hubPubkey.GetAddress(settings.Network);
 
             long totalOutputSatoshi = 0;
             long outputSatoshi = 0;
@@ -693,22 +693,22 @@ namespace BlockchainStateManager.Offchain
         }
 
         public async Task<FinalizeChannelSetupResponse> FinalizeChannelSetup(string FullySignedSetupTransaction, string SignedClientCommitment0,
-            double clientCommitedAmount, double hubCommitedAmount, string clientPubkey, string hubPrivatekey, string assetName,
-            string clientSelfRevokePubkey, string hubSelfRevokePubkey, int activationIn10Minutes)
+            double clientCommitedAmount, double hubCommitedAmount, PubKey clientPubkey, string hubPrivatekey, string assetName,
+            PubKey clientSelfRevokePubkey, PubKey hubSelfRevokePubkey, int activationIn10Minutes)
         {
             try
             {
                 string errorMessage = null;
                 var hubPubkey = (new BitcoinSecret(hubPrivatekey)).PubKey;
                 var unsignedClientCommitment = CreateUnsignnedCommitmentTransaction(FullySignedSetupTransaction, clientCommitedAmount, hubCommitedAmount,
-                clientPubkey, hubPubkey.ToString(), assetName, true, hubSelfRevokePubkey, activationIn10Minutes, out errorMessage);
+                clientPubkey, hubPubkey, assetName, true, hubSelfRevokePubkey, activationIn10Minutes, out errorMessage);
 
                 if (errorMessage != null)
                 {
                     throw new Exception(errorMessage);
                 }
 
-                var checkResult = await CheckIfClientSignedVersionIsOK(new Transaction(unsignedClientCommitment), new Transaction(SignedClientCommitment0), new PubKey(clientPubkey), hubPubkey,
+                var checkResult = await CheckIfClientSignedVersionIsOK(new Transaction(unsignedClientCommitment), new Transaction(SignedClientCommitment0), clientPubkey, hubPubkey,
                     SigHash.All | SigHash.AnyoneCanPay);
                 if (!checkResult.Success)
                 {
@@ -717,7 +717,7 @@ namespace BlockchainStateManager.Offchain
 
                 errorMessage = null;
                 var unsignedHubCommitment = CreateUnsignnedCommitmentTransaction(FullySignedSetupTransaction, clientCommitedAmount,
-                    hubCommitedAmount, clientPubkey, hubPubkey.ToString(), assetName, false, clientSelfRevokePubkey,
+                    hubCommitedAmount, clientPubkey, hubPubkey, assetName, false, clientSelfRevokePubkey,
                     activationIn10Minutes, out errorMessage);
                 if (errorMessage != null)
                 {
@@ -750,14 +750,14 @@ namespace BlockchainStateManager.Offchain
         }
 
         public async Task<CreateUnsignedCommitmentTransactionsResponse> CreateUnsignedCommitmentTransactions(string signedSetupTransaction,
-            string clientPubkey, string hubPubkey, double clientAmount, double hubAmount, string assetName,
-            string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
+            PubKey clientPubkey, PubKey hubPubkey, double clientAmount, double hubAmount, string assetName,
+            PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
         {
             try
             {
                 string errorMessage = null;
                 var unsignedCommitment = CreateUnsignnedCommitmentTransaction(signedSetupTransaction, clientAmount, hubAmount,
-                clientPubkey, hubPubkey.ToString(), assetName, clientSendsCommitmentToHub, lockingPubkey, activationIn10Minutes,
+                clientPubkey, hubPubkey, assetName, clientSendsCommitmentToHub, lockingPubkey, activationIn10Minutes,
                 out errorMessage);
 
                 if (errorMessage != null)
@@ -776,14 +776,14 @@ namespace BlockchainStateManager.Offchain
         }
 
         public async Task<bool> CheckHalfSignedCommitmentTransactionToBeCorrect(string halfSignedCommitment,
-            string signedSetupTransaction, string clientPubkey, string hubPubkey, double clientAmount, double hubAmount,
-            string assetName, string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
+            string signedSetupTransaction, PubKey clientPubkey, PubKey hubPubkey, double clientAmount, double hubAmount,
+            string assetName, PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
         {
             try
             {
                 string errorMessage = null;
                 var unsignedClientCommitment = CreateUnsignnedCommitmentTransaction(signedSetupTransaction, clientAmount,
-                    hubAmount, clientPubkey, hubPubkey.ToString(), assetName, clientSendsCommitmentToHub,
+                    hubAmount, clientPubkey, hubPubkey, assetName, clientSendsCommitmentToHub,
                     lockingPubkey, activationIn10Minutes, out errorMessage);
 
                 if (errorMessage != null)
@@ -792,7 +792,7 @@ namespace BlockchainStateManager.Offchain
                 }
 
                 var checkResult = await CheckIfClientSignedVersionIsOK(new Transaction(unsignedClientCommitment),
-                    new Transaction(halfSignedCommitment), new PubKey(clientPubkey), new PubKey(hubPubkey),
+                    new Transaction(halfSignedCommitment), clientPubkey, hubPubkey,
                     SigHash.All | SigHash.AnyoneCanPay);
                 if (!checkResult.Success)
                 {
@@ -809,8 +809,8 @@ namespace BlockchainStateManager.Offchain
             }
         }
 
-        public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionForMultisigPart(string commitmentTransactionHex, string clientPubkey,
-            string hubPubkey, string assetName, string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
+        public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionForMultisigPart(string commitmentTransactionHex, PubKey clientPubkey,
+            PubKey hubPubkey, string assetName, PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
             string selfPrivateKey, string counterPartyRevokePrivateKey)
         {
             return await CreateCommitmentSpendingTransactionCore(commitmentTransactionHex, null, clientPubkey, hubPubkey, assetName,
@@ -860,8 +860,8 @@ namespace BlockchainStateManager.Offchain
 
 
         public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionCore(string commitmentTransactionHex,
-            string spendingPrivateKey, string clientPubkey, string hubPubkey, string assetName,
-            string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
+            string spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName,
+            PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
             Func<TxIn, Transaction, int, Coin, Script, SigHash, string, string, string, TxIn> generateProperOutputSpender,
             string selfPrivateKey, string counterPartyRevokePrivateKey)
         {
@@ -871,8 +871,8 @@ namespace BlockchainStateManager.Offchain
             {
                 var commtimentTransaction = new Transaction(commitmentTransactionHex);
 
-                string counterPartyPubkey = null;
-                string selfPubkey = null;
+                PubKey counterPartyPubkey = null;
+                PubKey selfPubkey = null;
                 if (clientSendsCommitmentToHub)
                 {
                     counterPartyPubkey = hubPubkey;
@@ -952,19 +952,19 @@ namespace BlockchainStateManager.Offchain
                         BitcoinPubKeyAddress destAddress = null;
                         if (spendingPrivateKey != null)
                         {
-                            destAddress = (new PubKey(counterPartyPubkey)).
+                            destAddress = counterPartyPubkey.
                               GetAddress(settings.Network);
                         }
                         else
                         {
                             if (clientSendsCommitmentToHub)
                             {
-                                destAddress = (new PubKey(selfPubkey)).
+                                destAddress = selfPubkey.
                                   GetAddress(settings.Network);
                             }
                             else
                             {
-                                destAddress = (new PubKey(hubPubkey)).
+                                destAddress = hubPubkey.
                                     GetAddress(settings.Network);
                             }
                         }
@@ -1040,8 +1040,8 @@ namespace BlockchainStateManager.Offchain
         }
 
         public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionForTimeActivatePart(string commitmentTransactionHex,
-            string spendingPrivateKey, string clientPubkey, string hubPubkey, string assetName,
-            string lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
+            string spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName,
+            PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
         {
             return await CreateCommitmentSpendingTransactionCore(commitmentTransactionHex, spendingPrivateKey, clientPubkey, hubPubkey, assetName,
                 lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub,

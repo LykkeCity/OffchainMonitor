@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
 using System.Linq;
 using System.Text;
@@ -21,14 +22,14 @@ namespace BlockchainStateManager.DB
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Fee>()
-                .HasKey(f => new { f.TransactionId, f.OutputNumber });
-
             modelBuilder.Entity<ChannelCoin>()
                 .HasKey(c => new { c.Id });
 
             modelBuilder.Entity<OffchainChannel>()
                 .HasKey(o => new { o.ChannelId });
+
+            modelBuilder.Entity<Fee>()
+                .HasKey(f => new { f.TransactionId, f.OutputNumber });
         }
     }
 
@@ -68,7 +69,7 @@ namespace BlockchainStateManager.DB
             set;
         }
 
-        public uint OutputNumber
+        public int OutputNumber
         {
             get;
             set;

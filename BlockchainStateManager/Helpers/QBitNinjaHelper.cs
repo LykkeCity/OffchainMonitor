@@ -136,7 +136,7 @@ namespace BlockchainStateManager.Helpers
             foreach (var id in ids)
             {
                 indexed = false;
-                for (int i = 0; i < 30; i++)
+                for (int i = 0; i < 60; i++)
                 {
                     bool result = false;
                     try
