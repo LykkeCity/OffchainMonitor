@@ -21,3 +21,8 @@ Api is accessable at /swagger/v1/swagger.json endpoint
 *   The offchain material on LykkeCity gihub, including bitcoinservice repository or the the old Offchain repository.
 
 *   lightning.network related material for example: https://lightning.network/lightning-network-paper.pdf
+
+## Testing
+
+BlockchainStateManager is used to put a bitcoin daemon of regtest mode in a known state, so things could be tested.
+Running BlockchainStateManager should be practiced in Administrator mode (it is available for windows only), since it currently stops/starts iis service.
