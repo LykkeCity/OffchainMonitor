@@ -26,3 +26,7 @@ Api is accessable at /swagger/v1/swagger.json endpoint
 
 BlockchainStateManager is used to put a bitcoin daemon of regtest mode in a known state, so things could be tested.
 Running BlockchainStateManager should be practiced in Administrator mode (it is available for windows only), since it currently stops/starts iis service.
+
+### Required software for testing
+
+Bitcoin daemon in regtest mode, Azure storage emulator, QBitNinja, QBitNinja.Listener.Console, Sql Server (Express edition would work)
