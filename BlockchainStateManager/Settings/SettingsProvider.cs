@@ -23,14 +23,10 @@ namespace BlockchainStateManager.Settings
             settings.RegtestRPCIP = config.AppSettings.Settings["RegtestRPCIP"]?.Value;
             settings.RegtestPort = int.Parse(config.AppSettings.Settings["RegtestPort"]?.Value);
             settings.QBitNinjaListenerConsolePath = config.AppSettings.Settings["QBitNinjaListenerConsolePath"]?.Value;
-            settings.WalletBackendExecutablePath = config.AppSettings.Settings["WalletBackendExecutablePath"]?.Value;
-            settings.InQueueConnectionString = config.AppSettings.Settings["InQueueConnectionString"]?.Value;
-            settings.OutQueueConnectionString = config.AppSettings.Settings["OutQueueConnectionString"]?.Value;
             settings.DBConnectionString = config.AppSettings.Settings["DBConnectionString"]?.Value;
             settings.ExchangePrivateKey = config.AppSettings.Settings["ExchangePrivateKey"]?.Value;
             settings.Network = config.AppSettings.Settings["Network"].Value.ToLower().Equals("main") ? NBitcoin.Network.Main : NBitcoin.Network.TestNet;
             settings.QBitNinjaBaseUrl = config.AppSettings.Settings["QBitNinjaBaseUrl"]?.Value;
-            settings.WalletBackendUrl = config.AppSettings.Settings["WalletBackendUrl"]?.Value;
             settings.ColorCorePort = int.Parse(config.AppSettings.Settings["ColorCorePort"]?.Value);
             settings.Assets = JsonConvert.DeserializeObject<Assets.AssetDefinition[]>(config.AppSettings.Settings["Assets"]?.Value);
         }

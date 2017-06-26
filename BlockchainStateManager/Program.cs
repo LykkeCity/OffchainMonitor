@@ -20,13 +20,11 @@ namespace BlockchainStateManager
     {
         public static ISettingsProvider settingsProvider = null;
         public static IDaemonHelper daemonHelper = null;
-        public static IOffchainClient offchianClient = null;
         public static ITransactionBroacaster transactionBroadcaster = null;
         public static IFeeManager feeManager = null;
         public static IBlockchainExplorerHelper blockchainExplorerHelper = null;
 
         private static AzureStorageTaskHelper azureStorageTaskHelper = null;
-        private static WalletbackEndTaskHelper walletbackendTaskHelper = null;
         private static BitcoinTaskHelper bitcoinTaskHelper = null;
         private static QBitninjaTaskHelper qbitninjaTaskHelper = null;
         private static OffchainHelper offchainHelper = null;
@@ -53,7 +51,6 @@ namespace BlockchainStateManager
 
             settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
             daemonHelper = Bootstrap.container.Resolve<IDaemonHelper>();
-            offchianClient = Bootstrap.container.Resolve<IOffchainClient>();
             transactionBroadcaster = Bootstrap.container.Resolve<ITransactionBroacaster>();
             feeManager = Bootstrap.container.Resolve<IFeeManager>();
             blockchainExplorerHelper = Bootstrap.container.Resolve<IBlockchainExplorerHelper>();
@@ -61,7 +58,6 @@ namespace BlockchainStateManager
             azureStorageTaskHelper = new AzureStorageTaskHelper(settingsProvider);
             bitcoinTaskHelper = new BitcoinTaskHelper(settingsProvider);
             qbitninjaTaskHelper = new QBitninjaTaskHelper(settingsProvider);
-            walletbackendTaskHelper = new WalletbackEndTaskHelper(settingsProvider);
             iisTaskHelper = new IISTaskHelper();
             offchainHelper = new OffchainHelper(blockchainExplorerHelper, settingsProvider);
 

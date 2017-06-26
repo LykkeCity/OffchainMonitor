@@ -65,12 +65,6 @@ namespace BlockchainStateManager.Settings
             set;
         }
 
-        public string WalletBackendExecutablePath
-        {
-            get;
-            set;
-        }
-
         public string DBConnectionString
         {
             get;

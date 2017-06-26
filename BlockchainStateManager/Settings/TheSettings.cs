@@ -13,9 +13,6 @@ namespace BlockchainStateManager.Settings
     public class TheSettings
     {
         public string RestEndPoint { get; set; }
-        public string InQueueConnectionString { get; set; }
-        public string OutQueueConnectionString { get; set; }
-
         public string ConnectionString { get; set; }
         public string LykkeSettingsConnectionString { get; set; }
 
@@ -44,8 +41,6 @@ namespace BlockchainStateManager.Settings
                 return QBitNinjaBaseUrl + "transactions/";
             }
         }
-
-        public string WalletBackendUrl { get; set; }
         public int PreGeneratedOutputMinimumCount { get; set; }
 
         [DefaultValue("outdata")]
@@ -71,7 +66,7 @@ namespace BlockchainStateManager.Settings
             get;
             set;
         }
-        
+
         [DefaultValue(400)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int BroadcastGroup
@@ -200,5 +195,4 @@ namespace BlockchainStateManager.Settings
             set;
         }
     }
-
 }

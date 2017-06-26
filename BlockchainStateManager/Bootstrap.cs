@@ -20,8 +20,6 @@ namespace BlockchainStateManager
                 .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<ISettingsProvider>();
             builder.RegisterType<DaemonHelper>().InstancePerLifetimeScope()
                 .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<IDaemonHelper>();
-            builder.RegisterType<WalletBackendOffchainClient>().InstancePerLifetimeScope()
-                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<IOffchainClient>();
             builder.RegisterType<BitcoinDaemonTransactionBroadcaster>().InstancePerLifetimeScope()
                 .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies).As<ITransactionBroacaster>();
             builder.RegisterType<QBitNinjaHelper>().InstancePerLifetimeScope()
