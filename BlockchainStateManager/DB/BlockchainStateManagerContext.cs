@@ -75,7 +75,7 @@ namespace BlockchainStateManager.DB
             set;
         }
 
-        public ulong Satoshi
+        public long Satoshi
         {
             get;
             set;

@@ -251,7 +251,7 @@ namespace BlockchainStateManager.Offchain
                         var reservationEndDate =
                             (channelTimeoutInMinutes == 0 ? now.AddYears(1000) : now.AddMinutes(channelTimeoutInMinutes));
 
-                        await builder.AddEnoughPaymentFee();
+                        await builder.AddEnoughPaymentFee(settings.FeeAddress);
                         txHex = builder.BuildTransaction(true).ToHex();
                         var txHash = Convert.ToString(SHA256Managed.Create().ComputeHash(Helper.StringToByteArray(txHex)));
                         var channel = context.OffchainChannels.Add(new OffchainChannel { unsignedTransactionHash = txHash });
@@ -983,7 +983,7 @@ namespace BlockchainStateManager.Offchain
                             builder.Send(destAddress, coinToBeAdded.Amount);
                         }
 
-                        await builder.AddEnoughPaymentFee();
+                        await builder.AddEnoughPaymentFee(settings.FeeAddress);
                         var tx = builder.BuildTransaction(false);
                         tx.Version = 2;
 

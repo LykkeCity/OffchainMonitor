@@ -14,9 +14,11 @@ namespace BlockchainStateManager.Helpers
     public static class FeeManagerExtenions
     {
         
-        public static async Task<TransactionBuilder> AddEnoughPaymentFee(this TransactionBuilder builder)
+        public static async Task<TransactionBuilder> AddEnoughPaymentFee(this TransactionBuilder builder, string changeAddress)
         {
             var selectedFee = await FeeManager.GetOneFeeCoin();
+
+            builder.SetChange(BitcoinAddress.Create(changeAddress), ChangeType.Uncolored);
             Coin selectedCoin = new Coin(new uint256(selectedFee.TransactionId), (uint) selectedFee.OutputNumber,
                     new Money(selectedFee.Satoshi), new Script(selectedFee.Script));
             builder.AddKeys(new BitcoinSecret(selectedFee.PrivateKey)).AddCoins(selectedCoin);
@@ -64,6 +66,7 @@ namespace BlockchainStateManager.Helpers
         }
         public async Task<Error.Error> GenerateFees(BitcoinSecret sourceSecret, BitcoinSecret destinationSecret, int feeCount)
         {
+            var feeAmount = Constants.BTCToSathoshiMultiplicationFactor / 100;
             var coins = await explorerHelper.GetCoinsForWallet(sourceSecret.GetAddress().ToWif(), 10, 0, null, null,
                  null, true) as GetOrdinaryCoinsForWalletReturnType;
 
@@ -85,7 +88,7 @@ namespace BlockchainStateManager.Helpers
                     for (int i = 0; i < feeCount; i++)
                     {
                         builder.Send(destinationSecret.GetAddress(),
-                            new Money(Constants.BTCToSathoshiMultiplicationFactor));
+                            new Money(feeAmount));
                     }
                     builder.SetChange(sourceSecret.GetAddress());
                     builder.SendFees(new Money(feeCount * 100000));
@@ -104,7 +107,7 @@ namespace BlockchainStateManager.Helpers
                                 Consumed = false,
                                 TransactionId = txHash,
                                 OutputNumber = (int) i,
-                                Satoshi = Constants.BTCToSathoshiMultiplicationFactor,
+                                Satoshi = (long) feeAmount,
                                 PrivateKey = destinationSecret.ToString(),
                                 Script = tx.Outputs[i].ScriptPubKey.ToString()
                             });

@@ -25,6 +25,7 @@ namespace BlockchainStateManager.Settings
             settings.QBitNinjaListenerConsolePath = config.AppSettings.Settings["QBitNinjaListenerConsolePath"]?.Value;
             settings.DBConnectionString = config.AppSettings.Settings["DBConnectionString"]?.Value;
             settings.ExchangePrivateKey = config.AppSettings.Settings["ExchangePrivateKey"]?.Value;
+            settings.FeeAddress = config.AppSettings.Settings["FeeAddress"]?.Value;
             settings.Network = config.AppSettings.Settings["Network"].Value.ToLower().Equals("main") ? NBitcoin.Network.Main : NBitcoin.Network.TestNet;
             settings.QBitNinjaBaseUrl = config.AppSettings.Settings["QBitNinjaBaseUrl"]?.Value;
             settings.ColorCorePort = int.Parse(config.AppSettings.Settings["ColorCorePort"]?.Value);
