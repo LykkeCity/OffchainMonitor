@@ -2,6 +2,7 @@
 using LkeServices.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using OffchainMonitorApi.Models;
 using SqlliteRepositories.Model;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,8 @@ namespace OffchainMonitorApi.Controllers
             settingsRepository = _settingsRepository;
         }
 
-
+        // Until SegWit acivation since punishment requires commitment id, and it is not available until hub broadcasts it, this is not usable
+        // After segwit activation commitment id will be available independent of its signing
         [HttpGet("AddCommitmentPunishmentPair")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -99,6 +101,19 @@ namespace OffchainMonitorApi.Controllers
                     throw exp;
                 }
             }
+        }
+
+        [HttpPost("AddFee")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> AddFee([FromBody]AddFeeRequest request)
+        {
+            var checkResult = request.CheckModel();
+            if (checkResult != null)
+            {
+                return StatusCode(500, checkResult);
+            }
+            return Ok();
         }
     }
 }
