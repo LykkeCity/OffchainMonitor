@@ -1,27 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "OffchainMonitor", "OffchainMonitor\OffchainMonitor.xproj", "{B1A6092D-18F0-4975-9C9B-B88A3B6726F9}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Main", "Main", "{0A07E16D-9002-4DFB-AD06-FBA1BD791A90}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repositories", "Repositories", "{3CD8E1E0-D9C9-438F-8641-914034E12B97}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Core", "src\Core\Core.xproj", "{1146B19E-C751-4754-811B-BBC7E7E14ECC}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "LkeServices", "src\LkeServices\LkeServices.xproj", "{1484890F-E986-438F-B0D3-A8060D0CCA13}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runner", "Runner", "{E31522C5-2AF2-435C-8D57-C1E9D3AC40B9}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "OffchainMonitorApi", "OffchainMonitorApi\OffchainMonitorApi.xproj", "{A1C97CC8-2A40-4D2B-9A1B-44E12A70841D}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "OffchainMonitorRunner", "OffchainMonitorRunner\OffchainMonitorRunner.xproj", "{BFFA2DF2-5841-4324-8B69-FF3ACC859C64}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SqlliteRepositories", "SqlliteRepositories\SqlliteRepositories.xproj", "{455F5E7F-B1BB-4CB3-92FA-9639A7904838}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{894C68F8-14DB-4A2D-9FD9-26AA37217F02}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OffchainMonitor", "OffchainMonitor\OffchainMonitor.csproj", "{B1A6092D-18F0-4975-9C9B-B88A3B6726F9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "src\Core\Core.csproj", "{1146B19E-C751-4754-811B-BBC7E7E14ECC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LkeServices", "src\LkeServices\LkeServices.csproj", "{1484890F-E986-438F-B0D3-A8060D0CCA13}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OffchainMonitorApi", "OffchainMonitorApi\OffchainMonitorApi.csproj", "{A1C97CC8-2A40-4D2B-9A1B-44E12A70841D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OffchainMonitorRunner", "OffchainMonitorRunner\OffchainMonitorRunner.csproj", "{BFFA2DF2-5841-4324-8B69-FF3ACC859C64}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlliteRepositories", "SqlliteRepositories\SqlliteRepositories.csproj", "{455F5E7F-B1BB-4CB3-92FA-9639A7904838}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockchainStateManager", "BlockchainStateManager\BlockchainStateManager.csproj", "{F43987DC-F9E3-4C4F-BE24-C919AFE3FD5F}"
 EndProject
