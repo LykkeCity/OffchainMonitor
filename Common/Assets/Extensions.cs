@@ -1,30 +1,17 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NBitcoin;
 
-namespace BlockchainStateManager.Assets
+namespace Common.Assets
 {
-    public class Helper
+    public static class Extentions
     {
-        public static bool IsRealAsset(string asset)
-        {
-            if (asset != null && asset.Trim().ToUpper() != "BTC")
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public static AssetDefinition GetAssetFromName(AssetDefinition[] assets, string assetName)
+        public static AssetDefinition GetAssetFromName(this AssetDefinition[] assets, string assetName, Network network)
         {
             AssetDefinition ret = null;
-
             foreach (var item in assets)
             {
                 if (item.Name == assetName)
@@ -32,7 +19,8 @@ namespace BlockchainStateManager.Assets
                     ret = new AssetDefinition();
                     ret.AssetId = item.AssetId;
                     ret.PrivateKey = item.PrivateKey;
-                    ret.AssetAddress = item.AssetAddress;
+                    ret.AssetAddress = (new BitcoinSecret(ret.PrivateKey, network)).PubKey.
+                        GetAddress(network).ToString();
                     ret.Divisibility = item.Divisibility;
                     ret.DefinitionUrl = item.DefinitionUrl;
                     break;

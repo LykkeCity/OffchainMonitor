@@ -1,5 +1,6 @@
 ﻿using BlockchainStateManager.DB;
 using BlockchainStateManager.Models;
+using Common.Error;
 using NBitcoin;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace BlockchainStateManager.Helpers
 {
     public interface IFeeManager
     {
-        Task<Error.Error> GenerateFees(BitcoinSecret sourceSecret, BitcoinSecret destinationSecret, int feeCount);
+        Task<Error> GenerateFees(BitcoinSecret sourceSecret, BitcoinSecret destinationSecret, int feeCount);
 
         Task<Fee[]> GetFeeCoinsToAddToTransaction(Transaction tx);
     }

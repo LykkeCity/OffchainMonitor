@@ -1,13 +1,14 @@
-﻿using BlockchainStateManager.Models;
+﻿using Common.Assets;
+using Common.Models;
 using NBitcoin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BlockchainStateManager.Assets;
 
-namespace BlockchainStateManager.Helpers
+
+namespace Common.Helpers.BlockchainExplorerHelper
 {
     public interface IBlockchainExplorerHelper
     {

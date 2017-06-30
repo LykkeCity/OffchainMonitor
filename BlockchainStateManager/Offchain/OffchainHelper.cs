@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BlockchainStateManager.Extensions;
 using LykkeWalletServices.Transactions.Responses;
 using NBitcoin;
 using NBitcoin.OpenAsset;
@@ -11,16 +10,19 @@ using BlockchainStateManager.Helpers;
 using BlockchainStateManager.Settings;
 using BlockchainStateManager.Transactions.Responses;
 using BlockchainStateManager.DB;
+using Common.Helpers.BlockchainExplorerHelper;
+using Common.Settings;
+using Common.Extensions;
 
 namespace BlockchainStateManager.Offchain
 {
     public class OffchainHelper
     {
         IBlockchainExplorerHelper blockchainExplorerHelper = null;
-        ISettingsProvider settingsProvider = null;
+        IBlockchainStateManagerSettingsProvider settingsProvider = null;
 
         Helper helper = null;
-        public OffchainHelper(IBlockchainExplorerHelper _blockchainExplorerHelper, ISettingsProvider _settingsProvider)
+        public OffchainHelper(IBlockchainExplorerHelper _blockchainExplorerHelper, IBlockchainStateManagerSettingsProvider _settingsProvider)
         {
             blockchainExplorerHelper = _blockchainExplorerHelper;
             settingsProvider = _settingsProvider;
@@ -32,7 +34,7 @@ namespace BlockchainStateManager.Offchain
         {
             var settings = settingsProvider.GetSettings();
 
-            var asset = Assets.Helper.GetAssetFromName(settings.Assets, channelAssetName);
+            var asset = Common.Assets.Helper.GetAssetFromName(settings.Assets, channelAssetName);
             var multisig = Helper.GetMultiSigFromTwoPubKeys(clientPubkey, hubPubkey);
             if (asset == null && channelAssetName.ToLower() != "btc")
             {
@@ -417,7 +419,7 @@ namespace BlockchainStateManager.Offchain
             var settings = settingsProvider.GetSettings();
 
             var multisig = Helper.GetMultiSigFromTwoPubKeys(clientPubkey, hubPubkey);
-            var asset = Assets.Helper.GetAssetFromName(settings.Assets, assetName);
+            var asset = Common.Assets.Helper.GetAssetFromName(settings.Assets, assetName);
             var btcAsset = (assetName.ToLower() == "btc");
 
             TransactionBuilder builder = new TransactionBuilder();
@@ -930,7 +932,7 @@ namespace BlockchainStateManager.Offchain
                             bearer = new Coin(commtimentTransaction, (uint)outputNumber);
                             ScriptCoin scriptCoin = new ScriptCoin(bearer, redeemScript);
 
-                            if (Assets.Helper.IsRealAsset(assetName))
+                            if (Common.Assets.Helper.IsRealAsset(assetName))
                             {
                                 inputColoredCoin = new ColoredCoin(
                                     new AssetMoney(new AssetId(new BitcoinAssetId(item.GetAssetId())), item.GetAssetAmount()),
@@ -970,7 +972,7 @@ namespace BlockchainStateManager.Offchain
                         }
 
                         TransactionBuilder builder = new TransactionBuilder();
-                        if (Assets.Helper.IsRealAsset(assetName))
+                        if (Common.Assets.Helper.IsRealAsset(assetName))
                         {
                             var coloredCoinToBeAdded = inputColoredCoin;
                             builder.AddCoins(coloredCoinToBeAdded);
@@ -1047,7 +1049,7 @@ namespace BlockchainStateManager.Offchain
                 lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub,
                 GenerateCustomScriptTimeActivateOutputSpender, null, null);
         }
-
+        /*
         public async Task<AddEnoughFeesToCommitentAndBroadcastResponse> AddEnoughFeesToCommitentAndBroadcast
             (string commitmentTransaction)
         {
@@ -1090,6 +1092,7 @@ namespace BlockchainStateManager.Offchain
                 throw exp;
             }
         }
+        */
     }
 }
 

@@ -1,24 +1,26 @@
-﻿using NBitcoin;
+﻿using Common.Assets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlockchainStateManager.Models
+namespace Common.Models
 {
-    public class GetScriptCoinsForWalletReturnType : GetCoinsForWalletReturnType
+    public class GetCoinsForWalletReturnType
     {
-        public ColoredCoin[] AssetScriptCoins
+        public Error.Error Error
         {
             get;
             set;
         }
 
-        public ScriptCoin[] ScriptCoins
+        public KeyStorage MatchingAddress
         {
             get;
             set;
         }
+
+        public AssetDefinition Asset { get; set; }
     }
 }

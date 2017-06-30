@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using BlockchainStateManager.Assets;
 using BlockchainStateManager.DB;
 using BlockchainStateManager.Helpers;
 using BlockchainStateManager.Helpers.TaskHelper;
@@ -7,6 +6,9 @@ using BlockchainStateManager.Models;
 using BlockchainStateManager.Offchain;
 using BlockchainStateManager.Settings;
 using BlockchainStateManager.Transactions.Responses;
+using Common.Assets;
+using Common.Helpers.BlockchainExplorerHelper;
+using Common.Settings;
 using NBitcoin;
 using System;
 using System.Collections.Generic;
@@ -19,7 +21,7 @@ namespace BlockchainStateManager
 {
     class Program
     {
-        public static ISettingsProvider settingsProvider = null;
+        public static IBlockchainStateManagerSettingsProvider settingsProvider = null;
         public static IDaemonHelper daemonHelper = null;
         public static ITransactionBroacaster transactionBroadcaster = null;
         public static IFeeManager feeManager = null;
@@ -50,7 +52,7 @@ namespace BlockchainStateManager
             "cPBtsvLrD3DnbdGgDZ2EMbZnQurzBVmgmejiMv55jH9JehPDn5Aq"   // 035441d55de4f28fcb967472a1f9790ecfea9a9a2a92e301646d52cb3290b9e355
             };
 
-            settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
+            settingsProvider = Bootstrap.container.Resolve<IBlockchainStateManagerSettingsProvider>();
             daemonHelper = Bootstrap.container.Resolve<IDaemonHelper>();
             transactionBroadcaster = Bootstrap.container.Resolve<ITransactionBroacaster>();
             feeManager = Bootstrap.container.Resolve<IFeeManager>();

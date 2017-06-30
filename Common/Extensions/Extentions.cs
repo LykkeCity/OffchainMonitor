@@ -1,20 +1,19 @@
-﻿using Autofac;
-using BlockchainStateManager.Enum;
-using BlockchainStateManager.Models;
-using BlockchainStateManager.Settings;
+﻿using Common.Enum;
+using Common.Models;
+using Common.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlockchainStateManager.Extensions
+namespace Common.Extensions
 {
     public static class Extentions
     {
         public static int GetOutputIndex(this UniversalUnspentOutput output)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)output).output_index;
@@ -25,7 +24,7 @@ namespace BlockchainStateManager.Extensions
 
         public static string GetScriptHex(this UniversalUnspentOutput output)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)output).script_hex;
@@ -34,9 +33,9 @@ namespace BlockchainStateManager.Extensions
             }
         }
 
-        internal static string GetAssetId(this UniversalUnspentOutput item)
+        public static string GetAssetId(this UniversalUnspentOutput item)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)item).asset_id;
@@ -45,9 +44,9 @@ namespace BlockchainStateManager.Extensions
             }
         }
 
-        internal static long GetValue(this UniversalUnspentOutput output)
+        public static long GetValue(this UniversalUnspentOutput output)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)output).value;
@@ -56,9 +55,9 @@ namespace BlockchainStateManager.Extensions
             }
         }
 
-        internal static string GetTransactionHash(this UniversalUnspentOutput output)
+        public static string GetTransactionHash(this UniversalUnspentOutput output)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)output).transaction_hash;
@@ -67,9 +66,9 @@ namespace BlockchainStateManager.Extensions
             }
         }
 
-        internal static int GetConfirmationNumber(this UniversalUnspentOutput item)
+        public static int GetConfirmationNumber(this UniversalUnspentOutput item)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)item).confirmations;
@@ -78,9 +77,9 @@ namespace BlockchainStateManager.Extensions
             }
         }
 
-        internal static long GetAssetAmount(this UniversalUnspentOutput item)
+        public static long GetAssetAmount(this UniversalUnspentOutput item)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)item).asset_quantity;
@@ -89,9 +88,9 @@ namespace BlockchainStateManager.Extensions
             }
         }
 
-        internal static long GetBitcoinAmount(this UniversalUnspentOutput item)
+        public static long GetBitcoinAmount(this UniversalUnspentOutput item)
         {
-            switch (Settings.Settings.ApiProvider)
+            switch (Constants.ApiProvider)
             {
                 case APIProvider.QBitNinja:
                     return ((QBitNinjaUnspentOutput)item).value;

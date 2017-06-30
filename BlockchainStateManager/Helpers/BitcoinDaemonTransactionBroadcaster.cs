@@ -1,4 +1,6 @@
 ﻿using BlockchainStateManager.Settings;
+using Common.Helpers.BlockchainExplorerHelper;
+using Common.Settings;
 using NBitcoin;
 using System;
 using System.Collections.Generic;
@@ -10,11 +12,11 @@ namespace BlockchainStateManager.Helpers
 {
     public class BitcoinDaemonTransactionBroadcaster : ITransactionBroacaster
     {
-        ISettingsProvider settingsProvider = null;
+        IBlockchainStateManagerSettingsProvider settingsProvider = null;
         IDaemonHelper daemonHelper = null;
         IBlockchainExplorerHelper blockchainExplorerHelper = null;
 
-        public BitcoinDaemonTransactionBroadcaster(ISettingsProvider _settingsProvider, IDaemonHelper _daemonHelper,
+        public BitcoinDaemonTransactionBroadcaster(IBlockchainStateManagerSettingsProvider _settingsProvider, IDaemonHelper _daemonHelper,
             IBlockchainExplorerHelper _blockchainExplorerHelper)
         {
             settingsProvider = _settingsProvider;

@@ -5,12 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using BlockchainStateManager.Settings;
 using NBitcoin;
+using Common.Settings;
+using Common.Helpers.BlockchainExplorerHelper;
 
 namespace BlockchainStateManager.Helpers
 {
     public class DaemonHelper : IDaemonHelper
     {
-        ISettingsProvider settingsProvider = null;
+        IBlockchainStateManagerSettingsProvider settingsProvider = null;
 
         public IBlockchainExplorerHelper blockchainExplorerHelper
         {
@@ -18,7 +20,7 @@ namespace BlockchainStateManager.Helpers
             set;
         }
 
-        public DaemonHelper(ISettingsProvider _settingsProvider)
+        public DaemonHelper(IBlockchainStateManagerSettingsProvider _settingsProvider)
         {
             settingsProvider = _settingsProvider;
         }

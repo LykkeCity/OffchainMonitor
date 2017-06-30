@@ -2,6 +2,7 @@
 using BlockchainStateManager.Helpers;
 using BlockchainStateManager.Models;
 using BlockchainStateManager.Settings;
+using Common.Settings;
 using NBitcoin;
 using NBitcoin.OpenAsset;
 using NBitcoin.RPC;
@@ -125,6 +126,7 @@ namespace BlockchainStateManager
             return GetMultiSigFromTwoPubKeys(new PubKey(clientPubkey), new PubKey(hubPubkey));
         }
 
+        /*
         public Asset GetAssetId(string assetName)
         {
             var settings = settingsProvider.GetSettings();
@@ -141,7 +143,7 @@ namespace BlockchainStateManager
                     return null;
             }
         }
-
+        */
         /*
         public static async Task<Tuple<bool, string, string>> GetTransactionHex(string transactionId,
             RPCConnectionParams connectionParams)
@@ -164,7 +166,7 @@ namespace BlockchainStateManager
         }
         */
 
-        public static NColorCore.RPC.RPCClient GetColoredRPCClient(Settings.Settings setting)
+        public static NColorCore.RPC.RPCClient GetColoredRPCClient(IBlockchainStateManagerSettings setting)
         {
             UriBuilder builder = new UriBuilder();
             builder.Host = setting.RegtestRPCIP;
@@ -176,7 +178,7 @@ namespace BlockchainStateManager
                 uri);
         }
 
-        public static LykkeExtenddedRPCClient GetRPCClient(Settings.Settings setting)
+        public static LykkeExtenddedRPCClient GetRPCClient(IBlockchainStateManagerSettings setting)
         {
             UriBuilder builder = new UriBuilder();
             builder.Host = setting.RegtestRPCIP;

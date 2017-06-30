@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlockchainStateManager.Enum
+namespace Common.Enum
 {
     internal enum APIProvider
     {

@@ -1,5 +1,5 @@
-﻿using BlockchainStateManager.Models;
-using BlockchainStateManager.Settings;
+﻿using Common.Models;
+using Common.Settings;
 using NBitcoin;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlockchainStateManager.Helpers
+namespace Common.Helpers.BlockchainExplorerHelper
 {
     public class QBitNinjaHelper : AbstractBlockchainExplorerHelper
     {

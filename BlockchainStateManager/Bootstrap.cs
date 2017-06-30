@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using BlockchainStateManager.Helpers;
 using BlockchainStateManager.Settings;
+using Common.Helpers.BlockchainExplorerHelper;
+using Common.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;

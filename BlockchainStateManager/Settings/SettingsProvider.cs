@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Common.Settings;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlockchainStateManager.Settings
 {
-    public class SettingsProvider : ISettingsProvider
+    public class SettingsProvider : IBlockchainStateManagerSettingsProvider
     {
         static Settings settings = new Settings();
 
@@ -29,10 +30,15 @@ namespace BlockchainStateManager.Settings
             settings.Network = config.AppSettings.Settings["Network"].Value.ToLower().Equals("main") ? NBitcoin.Network.Main : NBitcoin.Network.TestNet;
             settings.QBitNinjaBaseUrl = config.AppSettings.Settings["QBitNinjaBaseUrl"]?.Value;
             settings.ColorCorePort = int.Parse(config.AppSettings.Settings["ColorCorePort"]?.Value);
-            settings.Assets = JsonConvert.DeserializeObject<Assets.AssetDefinition[]>(config.AppSettings.Settings["Assets"]?.Value);
+            settings.Assets = JsonConvert.DeserializeObject<Common.Assets.AssetDefinition[]>(config.AppSettings.Settings["Assets"]?.Value);
         }
 
-        public Settings GetSettings()
+        public IBlockchainStateManagerSettings GetSettings()
+        {
+            return settings;
+        }
+
+        ISettings ISettingsProvider.GetSettings()
         {
             return settings;
         }

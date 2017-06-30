@@ -1,4 +1,5 @@
 ﻿using BlockchainStateManager.Helpers;
+using Common.Helpers.BlockchainExplorerHelper;
 using System;
 using System.Collections.Generic;
 using System.Linq;

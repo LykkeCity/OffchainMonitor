@@ -10,10 +10,10 @@ namespace BlockchainStateManager.Helpers.TaskHelper
 {
     public class QBitninjaTaskHelper
     {
-        ISettingsProvider settingsProvider = null;
+        IBlockchainStateManagerSettingsProvider settingsProvider = null;
         Process QBitNinjaProcess = null;
 
-        public QBitninjaTaskHelper(ISettingsProvider _settingsProvider)
+        public QBitninjaTaskHelper(IBlockchainStateManagerSettingsProvider _settingsProvider)
         {
             settingsProvider = _settingsProvider;
         }

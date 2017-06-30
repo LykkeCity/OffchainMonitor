@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlockchainStateManager.Settings
+namespace Common.Error
 {
-    public interface ISettingsProvider
+    public class Error
     {
-        Settings GetSettings();
+        public ErrorCode Code { get; set; }
+        public string Message { get; set; }
     }
 }

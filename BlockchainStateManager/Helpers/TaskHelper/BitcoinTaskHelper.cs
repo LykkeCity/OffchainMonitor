@@ -8,9 +8,9 @@ namespace BlockchainStateManager.Helpers.TaskHelper
 {
     public class BitcoinTaskHelper
     {
-        ISettingsProvider settingsProvider = null;
+        IBlockchainStateManagerSettingsProvider settingsProvider = null;
 
-        public BitcoinTaskHelper(ISettingsProvider _settingsProvider)
+        public BitcoinTaskHelper(IBlockchainStateManagerSettingsProvider _settingsProvider)
         {
             settingsProvider = _settingsProvider;
         }

@@ -1,7 +1,5 @@
-﻿using BlockchainStateManager.Assets;
-using BlockchainStateManager.Extensions;
-using BlockchainStateManager.Models;
-using BlockchainStateManager.Settings;
+﻿using Common.Models;
+using Common.Settings;
 using NBitcoin;
 using NBitcoin.OpenAsset;
 using System;
@@ -9,8 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Common.Extensions;
+using Common.Assets;
 
-namespace BlockchainStateManager.Helpers
+namespace Common.Helpers.BlockchainExplorerHelper
 {
     public abstract class AbstractBlockchainExplorerHelper : IBlockchainExplorerHelper
     {
@@ -19,11 +19,7 @@ namespace BlockchainStateManager.Helpers
             get;
             set;
         }
-        public IDaemonHelper daemonHelper
-        {
-            get;
-            set;
-        }
+
         public AbstractBlockchainExplorerHelper(ISettingsProvider _settingsProvider)
         {
             SettingsProvider = _settingsProvider;
@@ -62,16 +58,8 @@ namespace BlockchainStateManager.Helpers
             Transaction[] walletTransactions = new Transaction[outputList.Length];
             for (int i = 0; i < walletTransactions.Length; i++)
             {
-                var ret = await daemonHelper.GetTransactionHex(outputList[i].GetTransactionHash());
-                if (!ret.Item1)
-                {
-                    walletTransactions[i] = new Transaction(ret.Item3);
-                }
-                else
-                {
-                    throw new Exception("Could not get the transaction hex for the transaction with id: "
-                        + outputList[i].GetTransactionHash() + " . The exact error message is " + ret.Item2);
-                }
+                var ret = await GetTransactionHex(outputList[i].GetTransactionHash());
+                walletTransactions[i] = new Transaction(ret);
             }
             return walletTransactions;
         }
@@ -370,16 +358,8 @@ namespace BlockchainStateManager.Helpers
             Transaction[] walletTransactions = new Transaction[outputList.Length];
             for (int i = 0; i < walletTransactions.Length; i++)
             {
-                var ret = await daemonHelper.GetTransactionHex(outputList[i].GetTransactionHash());
-                if (!ret.Item1)
-                {
-                    walletTransactions[i] = new Transaction(ret.Item3);
-                }
-                else
-                {
-                    throw new Exception("Could not get the transaction hex for the transaction with id: "
-                        + outputList[i].GetTransactionHash() + " . The exact error message is " + ret.Item2);
-                }
+                var ret = await GetTransactionHex(outputList[i].GetTransactionHash());
+                walletTransactions[i] = new Transaction(ret);
             }
             return walletTransactions;
         }

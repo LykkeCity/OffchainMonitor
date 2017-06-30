@@ -8,6 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using BlockchainStateManager.Models;
 using BlockchainStateManager.DB;
+using Common.Helpers.BlockchainExplorerHelper;
+using Common.Error;
+using Common.Models;
 
 namespace BlockchainStateManager.Helpers
 {
@@ -64,19 +67,19 @@ namespace BlockchainStateManager.Helpers
             transactionBroadcaster = _transactionBroadcaster;
             explorerHelper = _explorerHelper;
         }
-        public async Task<Error.Error> GenerateFees(BitcoinSecret sourceSecret, BitcoinSecret destinationSecret, int feeCount)
+        public async Task<Error> GenerateFees(BitcoinSecret sourceSecret, BitcoinSecret destinationSecret, int feeCount)
         {
-            var feeAmount = Constants.BTCToSathoshiMultiplicationFactor / 100;
+            var feeAmount = Settings.Constants.BTCToSathoshiMultiplicationFactor / 100;
             var coins = await explorerHelper.GetCoinsForWallet(sourceSecret.GetAddress().ToWif(), 10, 0, null, null,
                  null, true) as GetOrdinaryCoinsForWalletReturnType;
 
             if (coins.Error == null)
             {
                 var selectedCoin = coins.Coins.Where(c => c.Amount >= (ulong)feeCount
-                * Constants.BTCToSathoshiMultiplicationFactor).FirstOrDefault();
+                * Settings.Constants.BTCToSathoshiMultiplicationFactor).FirstOrDefault();
                 if (selectedCoin == null)
                 {
-                    Error.Error retError = new Error.Error();
+                    Error retError = new Error();
                     retError.Message = "Could not find the proper coin to spend.";
                     return retError;
                 }
@@ -119,7 +122,7 @@ namespace BlockchainStateManager.Helpers
                 }
                 catch (Exception exp)
                 {
-                    Error.Error retError = new Error.Error();
+                    Error retError = new Error();
                     retError.Message = string.Format("An exception occured {0}.", exp.ToString());
                     return retError;
                 }

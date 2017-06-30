@@ -10,11 +10,12 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BlockchainStateManager</RootNamespace>
     <AssemblyName>BlockchainStateManager</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -174,27 +175,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\AssetDefinition.cs" />
-    <Compile Include="Assets\Extensions.cs" />
-    <Compile Include="Assets\Helper.cs" />
     <Compile Include="Bootstrap.cs" />
     <Compile Include="DB\BlockchainStateManagerContext.cs" />
-    <Compile Include="Enum\APIProvider.cs" />
     <Compile Include="Enum\NetworkType.cs" />
-    <Compile Include="Error\Error.cs" />
-    <Compile Include="Error\ErrorCode.cs" />
-    <Compile Include="Extensions\Extentions.cs" />
     <Compile Include="Helper.cs" />
-    <Compile Include="Helpers\AbstractBlockchainExplorerHelper.cs" />
     <Compile Include="Helpers\BitcoinDaemonTransactionBroadcaster.cs" />
     <Compile Include="Helpers\DaemonHelper.cs" />
     <Compile Include="Helpers\FeeManager.cs" />
-    <Compile Include="Helpers\IBlockchainExplorerHelper.cs" />
     <Compile Include="Helpers\IDaemonHelper.cs" />
     <Compile Include="Helpers\IFeeManager.cs" />
     <Compile Include="Helpers\ITransactionBroacaster.cs" />
     <Compile Include="Helpers\LykkeExtenddedRPCClient.cs" />
-    <Compile Include="Helpers\QBitNinjaHelper.cs" />
     <Compile Include="Helpers\ShellHelper.cs" />
     <Compile Include="Helpers\TaskHelper\AzureStorageTaskHelper.cs" />
     <Compile Include="Helpers\TaskHelper\BitcoinTaskHelper.cs" />
@@ -202,26 +193,20 @@
     <Compile Include="Helpers\TaskHelper\QBitninjaTaskHelper.cs" />
     <Compile Include="Models\Asset.cs" />
     <Compile Include="Models\CreateUnsignedCommitmentTransactionsResponse.cs" />
-    <Compile Include="Models\GetCoinsForWalletReturnType.cs" />
-    <Compile Include="Models\GetOrdinaryCoinsForWalletReturnType.cs" />
-    <Compile Include="Models\GetScriptCoinsForWalletReturnType.cs" />
     <Compile Include="Models\IExtendedCoin.cs" />
-    <Compile Include="Models\KeyStorage.cs" />
     <Compile Include="Models\Multisig.cs" />
-    <Compile Include="Models\QBitNinjaModels.cs" />
     <Compile Include="Models\RPCConnectionParams.cs" />
     <Compile Include="Models\SignCommitmentResponse.cs" />
     <Compile Include="Models\TransactionSignRequest.cs" />
-    <Compile Include="Models\UniversalModels.cs" />
     <Compile Include="Models\UnsignedChannelSetupTransaction.cs" />
     <Compile Include="Offchain\OffchainHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings\Constants.cs" />
+    <Compile Include="Settings\IBlockchainStateManagerSettings.cs" />
+    <Compile Include="Settings\IBlockchainStateManagerSettingsProvider.cs" />
     <Compile Include="Settings\SettingsProvider.cs" />
-    <Compile Include="Settings\ISettingsProvider.cs" />
     <Compile Include="Settings\Settings.cs" />
-    <Compile Include="Settings\TheSettings.cs" />
     <Compile Include="StateManagerHelper.cs" />
     <Compile Include="Transactions\Responses\AddEnoughFeesToCommitentAndBroadcastResponse.cs" />
     <Compile Include="Transactions\Responses\CommitmentCustomOutputSpendingTransaction.cs" />
@@ -243,6 +228,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{6323a7f1-831c-4324-a57d-32b723907b1f}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NColorCore\NColorCore.csproj">
       <Project>{b53dca32-0a3f-4163-bf89-9958afcb2568}</Project>
       <Name>NColorCore</Name>

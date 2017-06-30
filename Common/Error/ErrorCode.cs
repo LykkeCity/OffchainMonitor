@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlockchainStateManager.Error
+namespace Common.Error
 {
     public enum ErrorCode
     {

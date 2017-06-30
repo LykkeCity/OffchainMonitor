@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlockchainStateManager.Assets
+namespace Common.Assets
 {
     public class AssetDefinition
     {

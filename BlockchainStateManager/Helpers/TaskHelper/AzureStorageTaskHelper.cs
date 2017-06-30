@@ -9,9 +9,9 @@ namespace BlockchainStateManager.Helpers.TaskHelper
 {
     public class AzureStorageTaskHelper
     {
-        ISettingsProvider settingsProvider = null;
+        IBlockchainStateManagerSettingsProvider settingsProvider = null;
 
-        public AzureStorageTaskHelper(ISettingsProvider _settingsProvider)
+        public AzureStorageTaskHelper(IBlockchainStateManagerSettingsProvider _settingsProvider)
         {
             settingsProvider = _settingsProvider;
         }
