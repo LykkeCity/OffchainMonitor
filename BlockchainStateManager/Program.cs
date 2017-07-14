@@ -21,11 +21,11 @@ namespace BlockchainStateManager
 {
     class Program
     {
-        public static IBlockchainStateManagerSettingsProvider settingsProvider = null;
-        public static IDaemonHelper daemonHelper = null;
+        public static ISettingsProvider settingsProvider = null;
         public static ITransactionBroacaster transactionBroadcaster = null;
         public static IFeeManager feeManager = null;
         public static IBlockchainExplorerHelper blockchainExplorerHelper = null;
+        public static IDaemonHelper daemonHelper = null;
 
         private static AzureStorageTaskHelper azureStorageTaskHelper = null;
         private static BitcoinTaskHelper bitcoinTaskHelper = null;
@@ -52,17 +52,17 @@ namespace BlockchainStateManager
             "cPBtsvLrD3DnbdGgDZ2EMbZnQurzBVmgmejiMv55jH9JehPDn5Aq"   // 035441d55de4f28fcb967472a1f9790ecfea9a9a2a92e301646d52cb3290b9e355
             };
 
-            settingsProvider = Bootstrap.container.Resolve<IBlockchainStateManagerSettingsProvider>();
+            settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
             daemonHelper = Bootstrap.container.Resolve<IDaemonHelper>();
             transactionBroadcaster = Bootstrap.container.Resolve<ITransactionBroacaster>();
             feeManager = Bootstrap.container.Resolve<IFeeManager>();
             blockchainExplorerHelper = Bootstrap.container.Resolve<IBlockchainExplorerHelper>();
 
-            azureStorageTaskHelper = new AzureStorageTaskHelper(settingsProvider);
-            bitcoinTaskHelper = new BitcoinTaskHelper(settingsProvider);
-            qbitninjaTaskHelper = new QBitninjaTaskHelper(settingsProvider);
+            azureStorageTaskHelper = new AzureStorageTaskHelper(settingsProvider as IBlockchainStateManagerSettingsProvider);
+            bitcoinTaskHelper = new BitcoinTaskHelper(settingsProvider as IBlockchainStateManagerSettingsProvider);
+            qbitninjaTaskHelper = new QBitninjaTaskHelper(settingsProvider as IBlockchainStateManagerSettingsProvider);
             iisTaskHelper = new IISTaskHelper();
-            offchainHelper = new OffchainHelper(blockchainExplorerHelper, settingsProvider);
+            offchainHelper = new OffchainHelper(blockchainExplorerHelper, settingsProvider as IBlockchainStateManagerSettingsProvider);
 
             if (!PutBlockchainInAKnownState(reservedPrivateKey).Result)
             {
@@ -82,11 +82,11 @@ namespace BlockchainStateManager
             var multisig = GetMultiSigFromTwoPubKeys(clientPrivateKey.PubKey.ToString(),
                 hubPrivateKey.PubKey.ToString());
 
-            var coloredRPC = GetColoredRPCClient(settings);
+            var coloredRPC = GetColoredRPCClient(settings as IBlockchainStateManagerSettings);
 
             BitcoinColoredAddress[] addresses = new BitcoinColoredAddress[3];
-            addresses[0] = clientPrivateKey.GetAddress().ToColoredAddress();
-            addresses[1] = hubPrivateKey.GetAddress().ToColoredAddress();
+            addresses[0] = clientPrivateKey.PubKey.GetSegwitAddress(settings.Network).ToColoredAddress();
+            addresses[1] = hubPrivateKey.PubKey.GetSegwitAddress(settings.Network).ToColoredAddress();
             addresses[2] = (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress();
 
             int[] valuesToSend = new int[3];
@@ -101,7 +101,7 @@ namespace BlockchainStateManager
                 txIds[i] = await coloredRPC.IssueAssetAsync(Constants.USDAssetPrivateKey.GetAddress(), addresses[i], valuesToSend[i]);
             }
 
-            var bitcoinRPCCLient = GetRPCClient(settings);
+            var bitcoinRPCCLient = GetRPCClient(settings as IBlockchainStateManagerSettings);
             var blkIds = await bitcoinRPCCLient.GenerateBlocksAsync(1);
             await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                 (blockchainExplorerHelper.HasBlockIndexed, blkIds);
@@ -211,7 +211,7 @@ namespace BlockchainStateManager
                 uint feeCount = 100;
 
                 AssetDefinition usdAsset = null;
-                foreach(var item in settings.Assets)
+                foreach(var item in (settings as IBlockchainStateManagerSettings).Assets)
                 {
                     if(item.Name == "TestExchangeUSD")
                     {
@@ -225,7 +225,7 @@ namespace BlockchainStateManager
                     return false;
                 }
 
-                var bitcoinRPCCLient = GetRPCClient(settings);
+                var bitcoinRPCCLient = GetRPCClient(settings as IBlockchainStateManagerSettings);
 
                 IEnumerable<string> blkIds = null;
                 for (int i = 0; i < 11; i++)
@@ -243,12 +243,12 @@ namespace BlockchainStateManager
 
                 await bitcoinRPCCLient.ImportPrivKeyAsync(new BitcoinSecret(usdAsset.PrivateKey));
 
-                var txId = await bitcoinRPCCLient.SendToAddressAsync(new BitcoinSecret(usdAsset.PrivateKey).GetAddress(),
+                var txId = await bitcoinRPCCLient.SendToAddressAsync(new BitcoinSecret(usdAsset.PrivateKey).PubKey.GetSegwitAddress(settings.Network),
                     new Money(100 * Constants.BTCToSathoshiMultiplicationFactor));
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txId.ToString() });
 
-                txId = await bitcoinRPCCLient.SendToAddressAsync(feeSourcePrivateKey.GetAddress(),
+                txId = await bitcoinRPCCLient.SendToAddressAsync(feeSourcePrivateKey.PubKey.GetSegwitAddress(settings.Network),
                     new Money((feeCount + 1) * Constants.BTCToSathoshiMultiplicationFactor));
 
                 blkIds = await bitcoinRPCCLient.GenerateBlocksAsync(1);
@@ -258,7 +258,7 @@ namespace BlockchainStateManager
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txId.ToString() });
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
-                    (blockchainExplorerHelper.HasBalanceIndexed, new string[] { txId.ToString() }, feeSourcePrivateKey.GetAddress().ToWif());
+                    (blockchainExplorerHelper.HasBalanceIndexed, new string[] { txId.ToString() }, feeSourcePrivateKey.PubKey.GetSegwitAddress(settings.Network).ToWif());
 
                 var error = await feeManager.GenerateFees(feeSourcePrivateKey, feeDestinationPrivateKey, (int)feeCount);
                 if (error != null)

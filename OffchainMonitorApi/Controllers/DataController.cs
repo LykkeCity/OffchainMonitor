@@ -60,7 +60,7 @@ namespace OffchainMonitorApi.Controllers
                             var prevHash = cTx.Inputs[i].PrevOut.Hash.ToString();
                             var prevTx = await bitcoinTransactionService.GetTransaction(prevHash);
                             var prevOut = cTx.Inputs[i].PrevOut;
-                            if (prevTx.Outputs[prevOut.N].ScriptPubKey.GetDestinationAddress(netwok).ToWif()
+                            if (prevTx.Outputs[prevOut.N].ScriptPubKey.GetDestinationAddress(netwok).ToString()
                                 == multisig)
                             {
                                 found = true;

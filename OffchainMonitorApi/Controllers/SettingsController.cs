@@ -29,19 +29,14 @@ namespace OffchainMonitorApi.Controllers
 
             if (key.ToLower() == "multisig")
             {
-                Base58Data address = null;
+                BitcoinAddress address = null;
                 try
                 {
-                    address = Base58Data.GetFromBase58Data(value);
+                    address = BitcoinAddress.Create(value);
                 }
                 catch (Exception exp)
                 {
                     throw new Exception("Some problem in parsing the provided address.", exp);
-                }
-                if (!(address is BitcoinAddress))
-                {
-                    return BadRequest(string.Format("The passed {0} should be a Bitcoin address.",
-                        value));
                 }
             }
 

@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\src\Core\Core.csproj" />
     <ProjectReference Include="..\SqlliteRepositories\SqlliteRepositories.csproj" />
     <ProjectReference Include="..\src\LkeServices\LkeServices.csproj" />

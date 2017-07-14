@@ -29,4 +29,9 @@ Running BlockchainStateManager should be practiced in Administrator mode (it is 
 
 ### Required software for testing
 
-Bitcoin daemon in regtest mode, Azure storage emulator, QBitNinja, QBitNinja.Listener.Console, Sql Server (Express edition would work)
+Bitcoin daemon in regtest mode (Supporting SegWit, version > 0.13) , Azure storage emulator, QBitNinja, QBitNinja.Listener.Console, Sql Server (Express edition would work), colorcore ( https://github.com/OpenAssets/colorcore )
+
+*   Azure storage emulator, QBitNinja, colorcore should be be running before test running
+*   The BlockchainStateManager should be run in administrator mode since there is a management code for IIS. This includes visual studio if testing is being done through it.
+
+
