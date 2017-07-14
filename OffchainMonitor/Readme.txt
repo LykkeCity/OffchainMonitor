@@ -1,1 +1,0 @@
-﻿The command line version will probably stop here, since there is probably no good mechanism for communication between mobile device and the desktop. We will probably switch to a web hosted version, which the client will pay a small fee to host much more easier. Local hosting instructions although complicated will help client to host the web version easily.

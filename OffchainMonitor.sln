@@ -11,8 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runner", "Runner", "{E31522
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{894C68F8-14DB-4A2D-9FD9-26AA37217F02}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OffchainMonitor", "OffchainMonitor\OffchainMonitor.csproj", "{B1A6092D-18F0-4975-9C9B-B88A3B6726F9}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "src\Core\Core.csproj", "{1146B19E-C751-4754-811B-BBC7E7E14ECC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LkeServices", "src\LkeServices\LkeServices.csproj", "{1484890F-E986-438F-B0D3-A8060D0CCA13}"
@@ -29,7 +27,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NColorCore", "NColorCore\NC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{0B943975-3744-484F-AA25-7FEEE3830A53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{6323A7F1-831C-4324-A57D-32B723907B1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{6323A7F1-831C-4324-A57D-32B723907B1F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,10 +35,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B1A6092D-18F0-4975-9C9B-B88A3B6726F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B1A6092D-18F0-4975-9C9B-B88A3B6726F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B1A6092D-18F0-4975-9C9B-B88A3B6726F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B1A6092D-18F0-4975-9C9B-B88A3B6726F9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1146B19E-C751-4754-811B-BBC7E7E14ECC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1146B19E-C751-4754-811B-BBC7E7E14ECC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1146B19E-C751-4754-811B-BBC7E7E14ECC}.Release|Any CPU.ActiveCfg = Release|Any CPU
