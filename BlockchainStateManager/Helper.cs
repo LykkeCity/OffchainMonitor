@@ -24,6 +24,55 @@ namespace BlockchainStateManager
             settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
         }
 
+        private static Transaction SignWithSinglePrivateKey(Transaction[] previousTransactions, Transaction tx,
+            BitcoinSecret secret, SigHash sigHash)
+        {
+            var secretSegWitScriptPubKey = secret.PubKey.WitHash.ScriptPubKey;
+
+            TransactionBuilder builder = new TransactionBuilder();
+            builder.ContinueToBuild(tx);
+            for (int i = 0; i < previousTransactions.Count(); i++)
+            {
+                var prevOut = previousTransactions[i].Outputs[tx.Inputs[i].PrevOut.N];
+                var bearer = new Coin(previousTransactions[i], tx.Inputs[i].PrevOut.N);
+                if (prevOut.ScriptPubKey == secretSegWitScriptPubKey)
+                {
+                    new ScriptCoin(bearer, secretSegWitScriptPubKey);
+                }
+                else
+                {
+                    builder.AddCoins(bearer);
+                }
+            }
+            tx = builder.AddKeys(new BitcoinSecret[] { secret }).SignTransaction(tx, sigHash);
+
+            return tx;
+        }
+
+        private static async Task<Transaction[]> GetPreviousTransactions(Transaction tx)
+        {
+            Transaction[] previousTransactions = null;
+            {
+                previousTransactions = new Transaction[tx.Inputs.Count];
+                for (int i = 0; i < previousTransactions.Count(); i++)
+                {
+                    // var txResponse = await GetTransactionHex(tx.Inputs[i].PrevOut.Hash.ToString(), WebSettings.ConnectionParams);
+                    var txResponse = await daemonHelper.GetTransactionHex
+                        (tx.Inputs[i].PrevOut.Hash.ToString());
+
+                    if (txResponse.Item1)
+                    {
+                        throw new Exception(string.Format("Error while retrieving transaction {0}, error is: {1}",
+                            tx.Inputs[i].PrevOut.Hash.ToString(), txResponse.Item2));
+                    }
+
+                    previousTransactions[i] = new Transaction(txResponse.Item3);
+                }
+            }
+
+            return previousTransactions;
+        }
+
         public static async Task<string> SignTransactionWorker(TransactionSignRequest signRequest,
             SigHash sigHash = SigHash.All)
         {
@@ -32,28 +81,10 @@ namespace BlockchainStateManager
             Transaction tx = new Transaction(signRequest.TransactionToSign);
             Transaction outputTx = new Transaction(signRequest.TransactionToSign);
             var secret = new BitcoinSecret(signRequest.PrivateKey);
+            var secretSegWitScriptPubKey = secret.PubKey.WitHash.ScriptPubKey;
+            var previousTransactions = await GetPreviousTransactions(tx);
 
-            TransactionBuilder builder = new TransactionBuilder();
-            builder.ContinueToBuild(tx);
-
-            Transaction[] previousTransactions = new Transaction[tx.Inputs.Count];
-            for (int i = 0; i < previousTransactions.Count(); i++)
-            {
-                // var txResponse = await GetTransactionHex(tx.Inputs[i].PrevOut.Hash.ToString(), WebSettings.ConnectionParams);
-                var txResponse = await daemonHelper.GetTransactionHex
-                    (tx.Inputs[i].PrevOut.Hash.ToString());
-
-                if (txResponse.Item1)
-                {
-                    throw new Exception(string.Format("Error while retrieving transaction {0}, error is: {1}",
-                        tx.Inputs[i].PrevOut.Hash.ToString(), txResponse.Item2));
-                }
-
-                previousTransactions[i] = new Transaction(txResponse.Item3);
-
-                builder.AddCoins(new Coin(previousTransactions[i], tx.Inputs[i].PrevOut.N));
-            }
-            tx = builder.AddKeys(new BitcoinSecret[] { secret }).SignTransaction(tx, sigHash);
+            tx = SignWithSinglePrivateKey(previousTransactions, tx, secret, sigHash);
 
             for (int i = 0; i < tx.Inputs.Count; i++)
             {
@@ -61,9 +92,6 @@ namespace BlockchainStateManager
 
                 var prevTransaction = previousTransactions[i];
                 var output = prevTransaction.Outputs[input.PrevOut.N];
-
-                Coin c = new Coin(prevTransaction, input.PrevOut.N);
-                builder.AddCoins(c);
 
                 if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 {
@@ -112,12 +140,11 @@ namespace BlockchainStateManager
 
             var multiSigAddress = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, new PubKey[] { clientPubkey ,
                 hubPubkey });
-            var multiSigAddressFormat = multiSigAddress.GetScriptAddress(network).ToString();
 
             var retValue = new Multisig();
-            retValue.MultiSigAddress = multiSigAddressFormat;
+            retValue.MultiSigAddress = multiSigAddress.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToString();
             retValue.MultiSigScript = multiSigAddress.ToString();
-            retValue.WalletAddress = clientPubkey.GetAddress(network).ToString();
+            retValue.WalletAddress = clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(network).ToString();
             return retValue;
         }
 
@@ -188,24 +215,6 @@ namespace BlockchainStateManager
 
             return new LykkeExtenddedRPCClient(new System.Net.NetworkCredential(setting.RegtestRPCUsername, setting.RegtestRPCPassword),
                 uri);
-        }
-
-        public static string GetAddressFromScriptPubKey(Script scriptPubKey, Network network)
-        {
-            string address = null;
-            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKey))
-            {
-                address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey).GetAddress(network).ToWif().ToString();
-            }
-            else
-            {
-                if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(scriptPubKey))
-                {
-                    address = PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey).GetAddress(network).ToWif().ToString();
-                }
-            }
-
-            return address;
         }
 
         // From: http://stackoverflow.com/questions/311165/how-do-you-convert-byte-array-to-hexadecimal-string-and-vice-versa

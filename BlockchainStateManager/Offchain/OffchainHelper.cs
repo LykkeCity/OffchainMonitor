@@ -77,8 +77,8 @@ namespace BlockchainStateManager.Offchain
             {
                 string txHex = null;
                 var btcAsset = (channelAssetName.ToLower() == "btc");
-                var clientAddress = clientPubkey.GetAddress(settings.Network);
-                var hubAddress = hubPubkey.GetAddress(settings.Network);
+                var clientAddress = clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network);
+                var hubAddress = hubPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network);
                 var multisig = Helper.GetMultiSigFromTwoPubKeys(clientPubkey, hubPubkey);
 
                 var asset = settings.Assets.Where(a => a.Name == channelAssetName).FirstOrDefault();
@@ -153,26 +153,33 @@ namespace BlockchainStateManager.Offchain
                                     contributedAmount[i] += ((ColoredCoin)item).Amount.Quantity;
                                 }
 
-                                if (i == 1)
+                                Script coinScript = null;
+                                switch(i)
                                 {
-                                    if (btcAsset)
-                                    {
-                                        var scriptItem =
-                                            new ScriptCoin((Coin)item, new Script(multisig.MultiSigScript));
-                                        coinToBeUsed[i].Add(item);
-                                    }
-                                    else
-                                    {
-                                        var bearer = ((ColoredCoin)item).Bearer;
-                                        var scriptBearer =
-                                            new ScriptCoin(bearer, new Script(multisig.MultiSigScript));
-                                        var coloredScriptCoin = new ColoredCoin(((ColoredCoin)item).Amount, scriptBearer);
-                                        coinToBeUsed[i].Add(coloredScriptCoin);
-                                    }
+                                    case 0:
+                                        coinScript = clientPubkey.WitHash.ScriptPubKey;
+                                        break;
+                                    case 1:
+                                        coinScript = new Script(multisig.MultiSigScript);
+                                        break;
+                                    case 2:
+                                        coinScript = hubPubkey.WitHash.ScriptPubKey;
+                                        break;
+                                }
+
+                                if (btcAsset)
+                                {
+                                    var scriptItem =
+                                        new ScriptCoin((Coin)item, coinScript);
+                                    coinToBeUsed[i].Add(scriptItem);
                                 }
                                 else
                                 {
-                                    coinToBeUsed[i].Add(item);
+                                    var bearer = ((ColoredCoin)item).Bearer;
+                                    var scriptBearer =
+                                        new ScriptCoin(bearer, coinScript);
+                                    var coloredScriptCoin = new ColoredCoin(((ColoredCoin)item).Amount, scriptBearer);
+                                    coinToBeUsed[i].Add(coloredScriptCoin);
                                 }
 
                                 if (contributedAmount[i] >= requiredAssetAmount[i])

@@ -79,14 +79,13 @@ namespace BlockchainStateManager
             var hubPrivateKey = new BitcoinSecret(privateKeys[1]);
             var hubSelfRevokKey = new BitcoinSecret(privateKeys[3]);
 
-            var multisig = GetMultiSigFromTwoPubKeys(clientPrivateKey.PubKey.ToString(),
-                hubPrivateKey.PubKey.ToString());
+            var multisig = GetMultiSigFromTwoPubKeys(clientPrivateKey.PubKey, hubPrivateKey.PubKey);
 
             var coloredRPC = GetColoredRPCClient(settings as IBlockchainStateManagerSettings);
 
             BitcoinColoredAddress[] addresses = new BitcoinColoredAddress[3];
-            addresses[0] = clientPrivateKey.PubKey.GetSegwitAddress(settings.Network).ToColoredAddress();
-            addresses[1] = hubPrivateKey.PubKey.GetSegwitAddress(settings.Network).ToColoredAddress();
+            addresses[0] = clientPrivateKey.PubKey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToColoredAddress();
+            addresses[1] = hubPrivateKey.PubKey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToColoredAddress();
             addresses[2] = (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress();
 
             int[] valuesToSend = new int[3];
@@ -155,24 +154,27 @@ namespace BlockchainStateManager
         }
         */
 
-        private static async Task<bool> StartRequiredJobs()
+        private static async Task<bool> StartRequiredJobs(bool resetEverything = false)
         {
             if (!iisTaskHelper.Stop())
             {
                 return false;
             }
 
-            if (!azureStorageTaskHelper.ClearAzureTables())
+            if (resetEverything)
             {
-                return false;
+                if (!azureStorageTaskHelper.ClearAzureTables())
+                {
+                    return false;
+                }
+
+                if (!bitcoinTaskHelper.EmptyBitcoinDirectiry())
+                {
+                    return false;
+                }
             }
 
-            if (!bitcoinTaskHelper.EmptyBitcoinDirectiry())
-            {
-                return false;
-            }
-
-            if (!await bitcoinTaskHelper.StartClearVersionOfBitcoinRegtest())
+            if (!await bitcoinTaskHelper.StartClearVersionOfBitcoinRegtest(resetEverything))
             {
                 return false;
             }
@@ -211,16 +213,16 @@ namespace BlockchainStateManager
                 uint feeCount = 100;
 
                 AssetDefinition usdAsset = null;
-                foreach(var item in (settings as IBlockchainStateManagerSettings).Assets)
+                foreach (var item in (settings as IBlockchainStateManagerSettings).Assets)
                 {
-                    if(item.Name == "TestExchangeUSD")
+                    if (item.Name == "TestExchangeUSD")
                     {
                         usdAsset = item;
                         break;
                     }
                 }
 
-                if (!await StartRequiredJobs())
+                if (!await StartRequiredJobs(true))
                 {
                     return false;
                 }
@@ -228,10 +230,21 @@ namespace BlockchainStateManager
                 var bitcoinRPCCLient = GetRPCClient(settings as IBlockchainStateManagerSettings);
 
                 IEnumerable<string> blkIds = null;
+                
+                for (int i = 0; i < 201; i++)
+                {
+                    var blkCount = 1;
+
+                    blkIds = await bitcoinRPCCLient.GenerateBlocksAsync(blkCount);
+                    await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
+                        (blockchainExplorerHelper.HasBlockIndexed, blkIds);
+                }
+                
+                /*
                 for (int i = 0; i < 11; i++)
                 {
                     var blkCount = 20;
-                    if(i == 10)
+                    if (i == 10)
                     {
                         blkCount = 1;
                     }
@@ -240,15 +253,15 @@ namespace BlockchainStateManager
                     await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                         (blockchainExplorerHelper.HasBlockIndexed, blkIds);
                 }
+                */
+                 await bitcoinRPCCLient.ImportPrivKeyAsync(new BitcoinSecret(usdAsset.PrivateKey));
 
-                await bitcoinRPCCLient.ImportPrivKeyAsync(new BitcoinSecret(usdAsset.PrivateKey));
-
-                var txId = await bitcoinRPCCLient.SendToAddressAsync(new BitcoinSecret(usdAsset.PrivateKey).PubKey.GetSegwitAddress(settings.Network),
+                var txId = await bitcoinRPCCLient.SendToAddressAsync(new BitcoinSecret(usdAsset.PrivateKey).GetAddress(),
                     new Money(100 * Constants.BTCToSathoshiMultiplicationFactor));
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txId.ToString() });
 
-                txId = await bitcoinRPCCLient.SendToAddressAsync(feeSourcePrivateKey.PubKey.GetSegwitAddress(settings.Network),
+                txId = await bitcoinRPCCLient.SendToAddressAsync(feeSourcePrivateKey.GetAddress(),
                     new Money((feeCount + 1) * Constants.BTCToSathoshiMultiplicationFactor));
 
                 blkIds = await bitcoinRPCCLient.GenerateBlocksAsync(1);
@@ -258,7 +271,7 @@ namespace BlockchainStateManager
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txId.ToString() });
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
-                    (blockchainExplorerHelper.HasBalanceIndexed, new string[] { txId.ToString() }, feeSourcePrivateKey.PubKey.GetSegwitAddress(settings.Network).ToWif());
+                    (blockchainExplorerHelper.HasBalanceIndexed, new string[] { txId.ToString() }, feeSourcePrivateKey.GetAddress().ToString());
 
                 var error = await feeManager.GenerateFees(feeSourcePrivateKey, feeDestinationPrivateKey, (int)feeCount);
                 if (error != null)

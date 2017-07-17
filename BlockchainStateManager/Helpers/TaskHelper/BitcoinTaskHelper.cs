@@ -34,13 +34,16 @@ namespace BlockchainStateManager.Helpers.TaskHelper
             return true;
         }
 
-        public async Task<bool> StartClearVersionOfBitcoinRegtest()
+        public async Task<bool> StartClearVersionOfBitcoinRegtest(bool doEmpty = false)
         {
             var settings = settingsProvider.GetSettings();
 
-            if (!EmptyBitcoinDirectiry())
+            if (doEmpty)
             {
-                return false;
+                if (!EmptyBitcoinDirectiry())
+                {
+                    return false;
+                }
             }
 
             var bitcoinPath = settings.BitcoinDaemonPath + "\\bitcoind.exe";
