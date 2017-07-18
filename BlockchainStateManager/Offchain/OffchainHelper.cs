@@ -109,7 +109,7 @@ namespace BlockchainStateManager.Offchain
                             inputAmount[i] = clientContributedAmount;
                             break;
                         case 1:
-                            inputAddress[i] = Base58Data.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinScriptAddress;
+                            inputAddress[i] = BitcoinScriptAddress.Create(multisig.MultiSigAddress);
                             inputAmount[i] = multisigNewlyAddedAmount;
                             break;
                         case 2:
@@ -207,7 +207,7 @@ namespace BlockchainStateManager.Offchain
                 var returnValue = 0L;
 
                 var numberOfColoredCoinOutputs = 0;
-                var multisigAddress = Base58Data.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress;
+                var multisigAddress = BitcoinAddress.Create(multisig.MultiSigAddress);
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -636,7 +636,8 @@ namespace BlockchainStateManager.Offchain
                 var prevTransaction = new Transaction(txResponse);
                 var output = prevTransaction.Outputs[input.PrevOut.N];
 
-                if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey) ||
+                    clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ScriptPubKey == output.ScriptPubKey)
                 {
                     if (clientPubkey.GetAddress(settings.Network) ==
                         output.ScriptPubKey.GetDestinationAddress(settings.Network))
@@ -656,20 +657,50 @@ namespace BlockchainStateManager.Offchain
                             };
                         }
                     }
+
+                    if(clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ScriptPubKey == output.ScriptPubKey)
+                    {
+                        var verified = PayToPubkeyHashTemplate.Instance.CheckScriptSig(input.WitScript, clientPubkey.GetAddress(settings.Network).ScriptPubKey);
+                        if (!verified)
+                        {
+                            return new GeneralCallResult
+                            {
+                                Success = false,
+                                ErrorMessage =
+                                string.Format("Expected signature was not present for input {0}.", i)
+                            };
+                        }
+                    }
                 }
                 else
                 {
                     if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                     {
-                        var redeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig).RedeemScript;
-                        if (PayToMultiSigTemplate.Instance.CheckScriptPubKey(redeemScript))
+                        var redeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig)?.RedeemScript;
+                        var segwitRedeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.WitScript)?.RedeemScript;
+                        PubKey[] pubkeys = null;
+                        PayToScriptHashSigParameters scriptParams = null;
+
+                        bool originalRedeem = false, segwitRedeem = false;
+                        if (redeemScript != null && PayToMultiSigTemplate.Instance.CheckScriptPubKey(redeemScript))
                         {
-                            var pubkeys = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).PubKeys;
+                            originalRedeem = true;
+                            pubkeys = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).PubKeys;
+                            scriptParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
+                        }
+                        if (segwitRedeemScript != null && PayToMultiSigTemplate.Instance.CheckScriptPubKey(segwitRedeemScript))
+                        {
+                            segwitRedeem = true;
+                            pubkeys = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(segwitRedeemScript).PubKeys;
+                            scriptParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.WitScript);
+                        }
+
+                        if (originalRedeem || segwitRedeem)
+                        {
                             for (int j = 0; j < pubkeys.Length; j++)
                             {
                                 if (clientPubkey.ToString() == pubkeys[j].ToHex())
                                 {
-                                    var scriptParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
                                     var hash = Script.SignatureHash(scriptParams.RedeemScript, unsignedTransaction, i, sigHash);
 
                                     var verified = clientPubkey.Verify(hash, scriptParams.Pushes[j + 1]);

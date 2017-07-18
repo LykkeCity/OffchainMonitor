@@ -24,6 +24,75 @@ namespace BlockchainStateManager
             settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
         }
 
+        private static Transaction SignMultisigWithSinglePrivateKey(TxIn input, int inputIndex, Transaction[] previousTransactions, Transaction tx,
+            BitcoinSecret secret, SigHash sigHash)
+        {
+            var outputTx = tx.Clone();
+            var prevTransaction = previousTransactions[inputIndex];
+            var output = prevTransaction.Outputs[input.PrevOut.N];
+
+            if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+            {
+                var redeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig)?.RedeemScript;
+                var segwitRedeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.WitScript)?.RedeemScript;
+
+                bool originalRedeem = false, segwitRedeem = false;
+                if (redeemScript != null && PayToMultiSigTemplate.Instance.CheckScriptPubKey(redeemScript))
+                {
+                    originalRedeem = true;
+                }
+                if (segwitRedeemScript != null && PayToMultiSigTemplate.Instance.CheckScriptPubKey(segwitRedeemScript))
+                {
+                    segwitRedeem = true;
+                }
+
+                if (originalRedeem || segwitRedeem)
+                {
+                    PubKey[] pubkeys = null;
+
+                    if (originalRedeem)
+                    {
+                        pubkeys = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).PubKeys;
+                    }
+                    if (segwitRedeem)
+                    {
+                        pubkeys = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(segwitRedeemScript).PubKeys;
+                    }
+
+                    for (int j = 0; j < pubkeys.Length; j++)
+                    {
+                        if (secret.PubKey.ToHex() == pubkeys[j].ToHex())
+                        {
+                            PayToScriptHashSigParameters scriptParams = null;
+                            if (originalRedeem)
+                            {
+                                scriptParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
+                            }
+                            if (segwitRedeem)
+                            {
+                                scriptParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.WitScript);
+                            }
+
+                            var hash = Script.SignatureHash(scriptParams.RedeemScript, tx, inputIndex, sigHash);
+                            var signature = secret.PrivateKey.Sign(hash, sigHash);
+                            scriptParams.Pushes[j + 1] = signature.Signature.ToDER().Concat(new byte[] { (byte)sigHash }).ToArray();
+
+                            if (originalRedeem)
+                            {
+                                outputTx.Inputs[inputIndex].ScriptSig = PayToScriptHashTemplate.Instance.GenerateScriptSig(scriptParams);
+                            }
+                            if (segwitRedeem)
+                            {
+                                outputTx.Inputs[inputIndex].WitScript = PayToScriptHashTemplate.Instance.GenerateScriptSig(scriptParams);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return outputTx;
+        }
+
         private static Transaction SignWithSinglePrivateKey(Transaction[] previousTransactions, Transaction tx,
             BitcoinSecret secret, SigHash sigHash)
         {
@@ -35,16 +104,20 @@ namespace BlockchainStateManager
             {
                 var prevOut = previousTransactions[i].Outputs[tx.Inputs[i].PrevOut.N];
                 var bearer = new Coin(previousTransactions[i], tx.Inputs[i].PrevOut.N);
-                if (prevOut.ScriptPubKey == secretSegWitScriptPubKey)
+                if (prevOut.ScriptPubKey == secretSegWitScriptPubKey.PaymentScript)
                 {
-                    new ScriptCoin(bearer, secretSegWitScriptPubKey);
+                    builder.AddCoins(new ScriptCoin(bearer, secretSegWitScriptPubKey));
                 }
                 else
                 {
-                    builder.AddCoins(bearer);
+                    if (prevOut.ScriptPubKey == secret.ScriptPubKey)
+                    {
+                        builder.AddCoins(bearer);
+                    }
                 }
             }
-            tx = builder.AddKeys(new BitcoinSecret[] { secret }).SignTransaction(tx, sigHash);
+            // tx = builder.AddKeys(new BitcoinSecret[] { secret }).SignTransaction(tx, sigHash);
+            tx = builder.AddKeys(new BitcoinSecret[] { secret }).BuildTransaction(true, sigHash);
 
             return tx;
         }
@@ -84,36 +157,16 @@ namespace BlockchainStateManager
             var secretSegWitScriptPubKey = secret.PubKey.WitHash.ScriptPubKey;
             var previousTransactions = await GetPreviousTransactions(tx);
 
-            tx = SignWithSinglePrivateKey(previousTransactions, tx, secret, sigHash);
+            outputTx = SignWithSinglePrivateKey(previousTransactions, outputTx, secret, sigHash);
 
             for (int i = 0; i < tx.Inputs.Count; i++)
             {
                 var input = tx.Inputs[i];
 
-                var prevTransaction = previousTransactions[i];
-                var output = prevTransaction.Outputs[input.PrevOut.N];
+                outputTx = SignMultisigWithSinglePrivateKey(input, i, previousTransactions, outputTx, secret, sigHash);
 
-                if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
-                {
-                    var redeemScript = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig).RedeemScript;
-                    if (PayToMultiSigTemplate.Instance.CheckScriptPubKey(redeemScript))
-                    {
-                        var pubkeys = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).PubKeys;
-                        for (int j = 0; j < pubkeys.Length; j++)
-                        {
-                            if (secret.PubKey.ToHex() == pubkeys[j].ToHex())
-                            {
-                                var scriptParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
-                                var hash = Script.SignatureHash(scriptParams.RedeemScript, tx, i, sigHash);
-                                var signature = secret.PrivateKey.Sign(hash, sigHash);
-                                scriptParams.Pushes[j + 1] = signature.Signature.ToDER().Concat(new byte[] { (byte)sigHash }).ToArray();
-                                outputTx.Inputs[i].ScriptSig = PayToScriptHashTemplate.Instance.GenerateScriptSig(scriptParams);
-                            }
-                        }
-                    }
-                    continue;
-                }
-
+                /*
+                // This part seems to be covered at the first part of the function
                 if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 {
                     var address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(output.ScriptPubKey)
@@ -128,6 +181,7 @@ namespace BlockchainStateManager
 
                     continue;
                 }
+                */
             }
 
             return outputTx.ToHex();

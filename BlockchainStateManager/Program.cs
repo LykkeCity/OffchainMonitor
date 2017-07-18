@@ -86,7 +86,7 @@ namespace BlockchainStateManager
             BitcoinColoredAddress[] addresses = new BitcoinColoredAddress[3];
             addresses[0] = clientPrivateKey.PubKey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToColoredAddress();
             addresses[1] = hubPrivateKey.PubKey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToColoredAddress();
-            addresses[2] = (BitcoinAddress.GetFromBase58Data(multisig.MultiSigAddress) as BitcoinAddress).ToColoredAddress();
+            addresses[2] = BitcoinAddress.Create(multisig.MultiSigAddress).ToColoredAddress();
 
             int[] valuesToSend = new int[3];
             valuesToSend[0] = 100 * USDMULTIPLICATIONFACTOR;
@@ -110,7 +110,7 @@ namespace BlockchainStateManager
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txIds[i].ToString() });
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed(blockchainExplorerHelper.HasBalanceIndexed,
-                    new string[] { txIds[i].ToString() }, addresses[i].Address.ToWif());
+                    new string[] { txIds[i].ToString() }, addresses[i].Address.ToString());
             }
 
             var unsignedChannelsetup = await offchainHelper.GenerateUnsignedChannelSetupTransaction
@@ -281,6 +281,19 @@ namespace BlockchainStateManager
 
 
                 var signedResp = await GetOffchainSignedSetup(privateKeys);
+
+                // Block is just for testing, should be removed, after tests pass
+                {
+                    var tx = new Transaction(signedResp.FullySignedSetupTransaction);
+                    TransactionBuilder builder = new TransactionBuilder();
+                    for (int i = 0; i < tx.Inputs.Count; i++)
+                    {
+                        var coin = new Coin(new Transaction(await blockchainExplorerHelper.GetTransactionHex(tx.Inputs[i].PrevOut.Hash.ToString())), tx.Inputs[i].PrevOut.N);
+                        builder.AddCoins(coin);
+                    }
+                    var verify = builder.Verify(tx);
+                }
+
                 await transactionBroadcaster.BroadcastTransactionToBlockchain
                     (signedResp.FullySignedSetupTransaction);
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
@@ -308,7 +321,7 @@ namespace BlockchainStateManager
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txSendingResult.GetHash().ToString() });
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
-                    (blockchainExplorerHelper.HasBalanceIndexedZeroConfirmation, new string[] { txSendingResult.GetHash().ToString() }, clientPrivateKey.GetAddress().ToWif());
+                    (blockchainExplorerHelper.HasBalanceIndexedZeroConfirmation, new string[] { txSendingResult.GetHash().ToString() }, clientPrivateKey.GetAddress().ToString());
 
 
                 var commitmentSpendingResp = await offchainHelper.CreateCommitmentSpendingTransactionForTimeActivatePart(txSendingResult.ToHex(), hubPrivateKey.ToString(),

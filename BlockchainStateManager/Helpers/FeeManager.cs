@@ -1,16 +1,12 @@
-﻿using BlockchainStateManager.Models;
-using BlockchainStateManager.Settings;
+﻿using BlockchainStateManager.DB;
+using Common.Error;
+using Common.Helpers.BlockchainExplorerHelper;
+using Common.Models;
 using NBitcoin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using BlockchainStateManager.Models;
-using BlockchainStateManager.DB;
-using Common.Helpers.BlockchainExplorerHelper;
-using Common.Error;
-using Common.Models;
 
 namespace BlockchainStateManager.Helpers
 {
@@ -70,7 +66,7 @@ namespace BlockchainStateManager.Helpers
         public async Task<Error> GenerateFees(BitcoinSecret sourceSecret, BitcoinSecret destinationSecret, int feeCount)
         {
             var feeAmount = Settings.Constants.BTCToSathoshiMultiplicationFactor / 100;
-            var coins = await explorerHelper.GetCoinsForWallet(sourceSecret.GetAddress().ToWif(), 10, 0, null, null,
+            var coins = await explorerHelper.GetCoinsForWallet(sourceSecret.GetAddress().ToString(), 10, 0, null, null,
                  null, true) as GetOrdinaryCoinsForWalletReturnType;
 
             if (coins.Error == null)

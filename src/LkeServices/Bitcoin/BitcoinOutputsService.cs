@@ -34,6 +34,7 @@ namespace LkeServices.Bitcoin
             _connectionParams = connectionParams;
         }
 
+        // Not tested after NBitcoin version upgarde
         public async Task<IEnumerable<ICoin>> GetUnspentOutputs(string walletAddress, int confirmationsCount = 0)
         {
             var outputResponse = await _qBitNinjaApiCaller.GetAddressBalance(walletAddress);
@@ -64,19 +65,22 @@ namespace LkeServices.Bitcoin
 
             coins = coins.Where(o => unspentOutputs.Any(un => un.N == o.Outpoint.N && un.TransactionHash == o.Outpoint.Hash.ToString())).ToList();
             var address = BitcoinAddress.Create(walletAddress);
-            switch (address.Type)
+
+            if(address is BitcoinPubKeyAddress)
             {
-                case Base58Type.PUBKEY_ADDRESS:
-                    return coins;
-                case Base58Type.SCRIPT_ADDRESS:
-                    var redeem = await _walletAddressRepository.GetRedeemScript(walletAddress);
-                    return coins.OfType<Coin>().Select(x => new ScriptCoin(x, new Script(redeem)))
-                           .Concat(
-                                coins.OfType<ColoredCoin>().Select(x => new ScriptCoin(x, new Script(redeem)).ToColoredCoin(x.Amount))
-                                .Cast<ICoin>());
-                default:
-                    throw new NotImplementedException();
+                return coins;
             }
+
+            if(address is BitcoinScriptAddress)
+            {
+                var redeem = await _walletAddressRepository.GetRedeemScript(walletAddress);
+                return coins.OfType<Coin>().Select(x => new ScriptCoin(x, new Script(redeem)))
+                       .Concat(
+                            coins.OfType<ColoredCoin>().Select(x => new ScriptCoin(x, new Script(redeem)).ToColoredCoin(x.Amount))
+                            .Cast<ICoin>());
+            }
+
+            throw new NotImplementedException();
         }
 
         public async Task<IEnumerable<ICoin>> GetUncoloredUnspentOutputs(string walletAddress, int confirmationsCount = 0)

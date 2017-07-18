@@ -186,7 +186,7 @@ namespace LkeServices.Transactions
                 _transactionBuildHelper.AggregateOutputs(tr);
 
                 var hex = tr.ToHex();
-                var channel = await _offchainChannelRepository.CreateChannel(multisig.ToWif(), asset.Id, hex, clientChannelAmount, hubChannelAmount);
+                var channel = await _offchainChannelRepository.CreateChannel(multisig.ToString(), asset.Id, hex, clientChannelAmount, hubChannelAmount);
 
                 await _broadcastedOutputRepository.InsertOutputs(OpenAssetsHelper.OrderBasedColoringOutputs(tr, context)
                     .Select(o => new BroadcastedOutput(o, channel.ChannelId, _connectionParams.Network)));
@@ -388,7 +388,7 @@ namespace LkeServices.Transactions
             if (OpenAssetsHelper.IsBitcoin(assetEntity.Id))
             {
                 Money sendAmount;
-                var unspentOutputs = (await _bitcoinOutputsService.GetUncoloredUnspentOutputs(from.ToWif())).ToList();
+                var unspentOutputs = (await _bitcoinOutputsService.GetUncoloredUnspentOutputs(from.ToString())).ToList();
 
                 if (amount < 0)
                     sendAmount = unspentOutputs.OfType<Coin>().DefaultIfEmpty().Sum(o => o.Amount);
@@ -405,7 +405,7 @@ namespace LkeServices.Transactions
                 var asset = new BitcoinAssetId(assetEntity.BlockChainAssetId, _connectionParams.Network).AssetId;
                 long sendAmount;
 
-                var unspentOutputs = (await _bitcoinOutputsService.GetColoredUnspentOutputs(from.ToWif(), asset)).ToList();
+                var unspentOutputs = (await _bitcoinOutputsService.GetColoredUnspentOutputs(from.ToString(), asset)).ToList();
                 if (amount < 0)
                     sendAmount = unspentOutputs.Sum(o => o.Amount.Quantity);
                 else
@@ -447,13 +447,13 @@ namespace LkeServices.Transactions
             {
                 var money = new Money(amount, MoneyUnit.BTC);
                 return tr.Outputs.AsCoins().FirstOrDefault(o => o.Amount == money &&
-                        o.ScriptPubKey.GetDestinationAddress(_connectionParams.Network).ToWif() == multisig);
+                        o.ScriptPubKey.GetDestinationAddress(_connectionParams.Network).ToString() == multisig);
             }
             var assetMoney = new AssetMoney(new BitcoinAssetId(asset.BlockChainAssetId), amount, asset.MultiplierPower);
             uint markerPosition;
             var marker = ColorMarker.Get(tr, out markerPosition);
             var found = tr.Outputs.AsIndexedOutputs()
-                .FirstOrDefault(o => o.TxOut.ScriptPubKey.GetDestinationAddress(_connectionParams.Network)?.ToWif() == multisig &&
+                .FirstOrDefault(o => o.TxOut.ScriptPubKey.GetDestinationAddress(_connectionParams.Network)?.ToString() == multisig &&
                                      o.N > markerPosition && marker.Quantities[o.N - markerPosition - 1] == (ulong)assetMoney.Quantity);
             return found?.ToCoin().ToScriptCoin(new Script(walletRedeemScript)).ToColoredCoin(assetMoney);
         }
@@ -464,7 +464,7 @@ namespace LkeServices.Transactions
         {
             var multisig = new BitcoinScriptAddress(wallet.MultisigAddress, _connectionParams.Network);
             var channel = new Transaction(channelTr);
-            var spendCoin = FindCoin(channel, multisig.ToWif(), wallet.RedeemScript, lockedAmount + unlockedAmount, asset);
+            var spendCoin = FindCoin(channel, multisig.ToString(), wallet.RedeemScript, lockedAmount + unlockedAmount, asset);
 
             if (spendCoin == null)
                 throw new BackendException($"Not found output in setup channel with amount {lockedAmount + unlockedAmount}", ErrorCode.NoCoinsFound);
@@ -510,7 +510,7 @@ namespace LkeServices.Transactions
             _transactionBuildHelper.AddFakeInput(builder, fakeAmount);
             var tr = builder.BuildTransaction(true);
             _transactionBuildHelper.RemoveFakeInput(tr);
-            return new CreationCommitmentResult(tr, lockedAddress.ToWif(), script.ToHex());
+            return new CreationCommitmentResult(tr, lockedAddress.ToString(), script.ToHex());
         }
 
         private class CreationCommitmentResult

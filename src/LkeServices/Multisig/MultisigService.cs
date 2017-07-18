@@ -49,7 +49,7 @@ namespace LkeServices.Multisig
         private async Task<IWalletAddress> CreateMultisig(string clientPubKey, string exchangePubKey)
         {
             var scriptPubKey = MultisigHelper.GenerateMultisigRedeemScript(clientPubKey, exchangePubKey);
-            return await _walletAddressRepository.Create(scriptPubKey.GetScriptAddress(_connectionParams.Network).ToWif(),
+            return await _walletAddressRepository.Create(scriptPubKey.GetScriptAddress(_connectionParams.Network).ToString(),
                 clientPubKey, exchangePubKey, scriptPubKey.ToString());
         }
     }
