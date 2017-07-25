@@ -4,11 +4,11 @@
 
 ## Summary
 
-This the monitor application (in the form of asp.net application), for monitoring Bitcoin blockchain for commitments which should not be broadcasted. If they are found broadcasted, the respective punishment will be broadcasted.
+This is the monitor application (in the form of asp.net application), for monitoring Bitcoin blockchain for commitments which should not be broadcasted. If they are found broadcasted, the respective punishment will be broadcasted.
 
 This app is designed to be hosted using Docker.
 
-## Iniitialization
+## Initialization
 
 *   The multisig address to be monitored should be specified using /api/Settings/SetMultisig endpoint.
 
