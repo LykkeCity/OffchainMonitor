@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using NBitcoin;
-using NBitcoin.OpenAsset;
+﻿using NBitcoin;
+using System;
 
 namespace Core.Repositories.TransactionOutputs
 {
@@ -47,7 +43,5 @@ namespace Core.Repositories.TransactionOutputs
         {
             TransactionId = transactionId;
         }
-       
-
     }
 }

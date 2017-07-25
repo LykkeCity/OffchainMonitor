@@ -154,7 +154,7 @@ namespace BlockchainStateManager.Offchain
                                 }
 
                                 Script coinScript = null;
-                                switch(i)
+                                switch (i)
                                 {
                                     case 0:
                                         coinScript = clientPubkey.WitHash.ScriptPubKey;
@@ -658,7 +658,7 @@ namespace BlockchainStateManager.Offchain
                         }
                     }
 
-                    if(clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ScriptPubKey == output.ScriptPubKey)
+                    if (clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ScriptPubKey == output.ScriptPubKey)
                     {
                         var verified = PayToPubkeyHashTemplate.Instance.CheckScriptSig(input.WitScript, clientPubkey.GetAddress(settings.Network).ScriptPubKey);
                         if (!verified)
@@ -701,7 +701,8 @@ namespace BlockchainStateManager.Offchain
                             {
                                 if (clientPubkey.ToString() == pubkeys[j].ToHex())
                                 {
-                                    var hash = Script.SignatureHash(scriptParams.RedeemScript, unsignedTransaction, i, sigHash);
+                                    var hash = Script.SignatureHash(scriptParams.RedeemScript, unsignedTransaction, i, sigHash, output.Value,
+                                        segwitRedeem ? HashVersion.Witness : HashVersion.Original);
 
                                     var verified = clientPubkey.Verify(hash, scriptParams.Pushes[j + 1]);
                                     if (!verified)
@@ -1050,8 +1051,8 @@ namespace BlockchainStateManager.Offchain
                             using (BlockchainStateManagerContext context = new BlockchainStateManagerContext())
                             {
                                 fee = (from item in context.Fees
-                                                          where item.TransactionId == inputTxId && item.OutputNumber == input.PrevOut.N
-                                                          select item).FirstOrDefault();
+                                       where item.TransactionId == inputTxId && item.OutputNumber == input.PrevOut.N
+                                       select item).FirstOrDefault();
                             }
 
                             if (fee?.PrivateKey != null)

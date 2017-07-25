@@ -73,7 +73,20 @@ namespace BlockchainStateManager
                                 scriptParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.WitScript);
                             }
 
-                            var hash = Script.SignatureHash(scriptParams.RedeemScript, tx, inputIndex, sigHash);
+                            uint256 hash = null;
+                            hash = Script.SignatureHash(scriptParams.RedeemScript, tx, inputIndex, sigHash, output.Value,
+                                segwitRedeem ? HashVersion.Witness : HashVersion.Original);
+                            /*
+                            {
+                                var txToSign = tx;
+                                var copiedScriptParams = scriptParams;
+                                copiedScriptParams.Pushes[1] = new byte[0];
+                                copiedScriptParams.Pushes[2] = new byte[0];
+                                txToSign.Inputs[inputIndex].WitScript
+                                    = PayToScriptHashTemplate.Instance.GenerateScriptSig(copiedScriptParams);
+                                hash = Script.SignatureHash(scriptParams.RedeemScript, txToSign, inputIndex, sigHash);
+                            }
+                            */
                             var signature = secret.PrivateKey.Sign(hash, sigHash);
                             scriptParams.Pushes[j + 1] = signature.Signature.ToDER().Concat(new byte[] { (byte)sigHash }).ToArray();
 
