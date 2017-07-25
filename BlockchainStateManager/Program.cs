@@ -198,6 +198,18 @@ namespace BlockchainStateManager
             return true;
         }
 
+        private async static Task<bool> VerifyTransaction(Transaction tx)
+        {
+            // Block is just for testing, should be removed, after tests pass
+            TransactionBuilder builder = new TransactionBuilder();
+            for (int i = 0; i < tx.Inputs.Count; i++)
+            {
+                var coin = new Coin(new Transaction(await blockchainExplorerHelper.GetTransactionHex(tx.Inputs[i].PrevOut.Hash.ToString())), tx.Inputs[i].PrevOut.N);
+                builder.AddCoins(coin);
+            }
+            return builder.Verify(tx);
+        }
+
         public static async Task<bool> PutBlockchainInAKnownState(string[] privateKeys)
         {
             var settings = settingsProvider.GetSettings();
@@ -230,7 +242,7 @@ namespace BlockchainStateManager
                 var bitcoinRPCCLient = GetRPCClient(settings as IBlockchainStateManagerSettings);
 
                 IEnumerable<string> blkIds = null;
-                
+
                 for (int i = 0; i < 201; i++)
                 {
                     var blkCount = 1;
@@ -239,7 +251,7 @@ namespace BlockchainStateManager
                     await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                         (blockchainExplorerHelper.HasBlockIndexed, blkIds);
                 }
-                
+
                 /*
                 for (int i = 0; i < 11; i++)
                 {
@@ -254,7 +266,7 @@ namespace BlockchainStateManager
                         (blockchainExplorerHelper.HasBlockIndexed, blkIds);
                 }
                 */
-                 await bitcoinRPCCLient.ImportPrivKeyAsync(new BitcoinSecret(usdAsset.PrivateKey));
+                await bitcoinRPCCLient.ImportPrivKeyAsync(new BitcoinSecret(usdAsset.PrivateKey));
 
                 var txId = await bitcoinRPCCLient.SendToAddressAsync(new BitcoinSecret(usdAsset.PrivateKey).GetAddress(),
                     new Money(100 * Constants.BTCToSathoshiMultiplicationFactor));
@@ -279,20 +291,7 @@ namespace BlockchainStateManager
                     return false;
                 }
 
-
                 var signedResp = await GetOffchainSignedSetup(privateKeys);
-
-                // Block is just for testing, should be removed, after tests pass
-                {
-                    var tx = new Transaction(signedResp.FullySignedSetupTransaction);
-                    TransactionBuilder builder = new TransactionBuilder();
-                    for (int i = 0; i < tx.Inputs.Count; i++)
-                    {
-                        var coin = new Coin(new Transaction(await blockchainExplorerHelper.GetTransactionHex(tx.Inputs[i].PrevOut.Hash.ToString())), tx.Inputs[i].PrevOut.N);
-                        builder.AddCoins(coin);
-                    }
-                    var verify = builder.Verify(tx);
-                }
 
                 await transactionBroadcaster.BroadcastTransactionToBlockchain
                     (signedResp.FullySignedSetupTransaction);
@@ -322,7 +321,6 @@ namespace BlockchainStateManager
                     (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txSendingResult.GetHash().ToString() });
                 await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
                     (blockchainExplorerHelper.HasBalanceIndexedZeroConfirmation, new string[] { txSendingResult.GetHash().ToString() }, clientPrivateKey.GetAddress().ToString());
-
 
                 var commitmentSpendingResp = await offchainHelper.CreateCommitmentSpendingTransactionForTimeActivatePart(txSendingResult.ToHex(), hubPrivateKey.ToString(),
                     clientPrivateKey.PubKey, hubPrivateKey.PubKey, "TestExchangeUSD", hubSelfRevokKey.PubKey, 144, true);

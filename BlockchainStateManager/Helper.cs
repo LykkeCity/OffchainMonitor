@@ -4,9 +4,6 @@ using BlockchainStateManager.Models;
 using BlockchainStateManager.Settings;
 using Common.Settings;
 using NBitcoin;
-using NBitcoin.OpenAsset;
-using NBitcoin.RPC;
-using QBitNinja.Client;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -76,17 +73,7 @@ namespace BlockchainStateManager
                             uint256 hash = null;
                             hash = Script.SignatureHash(scriptParams.RedeemScript, tx, inputIndex, sigHash, output.Value,
                                 segwitRedeem ? HashVersion.Witness : HashVersion.Original);
-                            /*
-                            {
-                                var txToSign = tx;
-                                var copiedScriptParams = scriptParams;
-                                copiedScriptParams.Pushes[1] = new byte[0];
-                                copiedScriptParams.Pushes[2] = new byte[0];
-                                txToSign.Inputs[inputIndex].WitScript
-                                    = PayToScriptHashTemplate.Instance.GenerateScriptSig(copiedScriptParams);
-                                hash = Script.SignatureHash(scriptParams.RedeemScript, txToSign, inputIndex, sigHash);
-                            }
-                            */
+                            
                             var signature = secret.PrivateKey.Sign(hash, sigHash);
                             scriptParams.Pushes[j + 1] = signature.Signature.ToDER().Concat(new byte[] { (byte)sigHash }).ToArray();
 
@@ -129,7 +116,6 @@ namespace BlockchainStateManager
                     }
                 }
             }
-            // tx = builder.AddKeys(new BitcoinSecret[] { secret }).SignTransaction(tx, sigHash);
             tx = builder.AddKeys(new BitcoinSecret[] { secret }).BuildTransaction(true, sigHash);
 
             return tx;
@@ -219,47 +205,7 @@ namespace BlockchainStateManager
         {
             return GetMultiSigFromTwoPubKeys(new PubKey(clientPubkey), new PubKey(hubPubkey));
         }
-
-        /*
-        public Asset GetAssetId(string assetName)
-        {
-            var settings = settingsProvider.GetSettings();
-            
-            switch(assetName)
-            {
-                case "TestExchangeUSD":
-                    return new Asset
-                    {
-                        AssetId = new AssetId(Constants.USDAssetPrivateKey.GetAddress().ScriptPubKey).ToString(settings.Network),
-                        MultiplicationFactor = Constants.USDAssetMultiplicationFactor
-                    };
-                default:
-                    return null;
-            }
-        }
-        */
-        /*
-        public static async Task<Tuple<bool, string, string>> GetTransactionHex(string transactionId,
-            RPCConnectionParams connectionParams)
-        {
-            string transactionHex = "";
-            bool errorOccured = false;
-            string errorMessage = "";
-            try
-            {
-                RPCClient client = new RPCClient(new System.Net.NetworkCredential(connectionParams.Username, connectionParams.Password),
-                                connectionParams.IpAddress, connectionParams.BitcoinNetwork);
-                transactionHex = (await client.GetRawTransactionAsync(uint256.Parse(transactionId), true)).ToHex();
-            }
-            catch (Exception e)
-            {
-                errorOccured = true;
-                errorMessage = e.ToString();
-            }
-            return new Tuple<bool, string, string>(errorOccured, errorMessage, transactionHex);
-        }
-        */
-
+        
         public static NColorCore.RPC.RPCClient GetColoredRPCClient(IBlockchainStateManagerSettings setting)
         {
             UriBuilder builder = new UriBuilder();
