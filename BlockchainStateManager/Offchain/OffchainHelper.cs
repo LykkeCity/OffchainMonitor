@@ -463,7 +463,7 @@ namespace BlockchainStateManager.Offchain
                         // ToDo: Curretnly we trust that clientCommitedAmount + hubCommitedAmount to be equal to colored output
                         // In future it is better to drop this trust and like LykkeBitcoinBlockchainManager in CSPK
                         var bearer = new ScriptCoin(new Coin(fullySignedTx, i), new Script(multisig.MultiSigScript));
-                        builder.AddCoins(new ColoredCoin(new AssetMoney(new AssetId(new BitcoinAssetId(asset.AssetId)), (long)((clientContributedAmount + hubContributedAmount) * asset.MultiplyFactor)), bearer));
+                        builder.AddCoins(new ColoredCoin(new AssetMoney(new AssetId(new BitcoinAssetId(asset.AssetId)), Convert.ToInt64((clientContributedAmount + hubContributedAmount) * asset.MultiplyFactor)), bearer));
                     }
                     break;
                 }
@@ -474,13 +474,13 @@ namespace BlockchainStateManager.Offchain
                 var dummyCoinToBeRemoved = new Coin(new uint256(0), 0,
                 new Money(1 * Constants.BTCToSathoshiMultiplicationFactor),
                 hubPubkey.GetAddress(settings.Network).ScriptPubKey);
-            
+
                 builder.AddCoins(dummyCoinToBeRemoved);
                 totalInputSatoshi += (long)(1 * Constants.BTCToSathoshiMultiplicationFactor);
             }
 
-            var clientAddress = clientPubkey.GetAddress(settings.Network);
-            var hubAddress = hubPubkey.GetAddress(settings.Network);
+            var clientAddress = clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network);
+            var hubAddress = hubPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network);
 
             long totalOutputSatoshi = 0;
             long outputSatoshi = 0;
@@ -864,10 +864,10 @@ namespace BlockchainStateManager.Offchain
         }
 
         public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionForMultisigPart(string commitmentTransactionHex, PubKey clientPubkey,
-            PubKey hubPubkey, string assetName, PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
+            PubKey hubPubkey, string assetName, double assetAmountToBeSpent, PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
             BitcoinSecret selfPrivateKey, BitcoinSecret counterPartyRevokePrivateKey)
         {
-            return await CreateCommitmentSpendingTransactionCore(commitmentTransactionHex, null, clientPubkey, hubPubkey, assetName,
+            return await CreateCommitmentSpendingTransactionCore(commitmentTransactionHex, null, clientPubkey, hubPubkey, assetName, assetAmountToBeSpent,
                 lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub,
                 GenerateCustomeScriptMultisigScriptOutputSpender, selfPrivateKey, counterPartyRevokePrivateKey);
         }
@@ -911,12 +911,13 @@ namespace BlockchainStateManager.Offchain
 
 
         public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionCore(string commitmentTransactionHex,
-            string spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName,
+            string spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName, double assetAmountToBeSpent,
             PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
             Func<TxIn, Transaction, int, Coin, Script, SigHash, string, BitcoinSecret, BitcoinSecret, TxIn> generateProperOutputSpender,
             BitcoinSecret selfPrivateKey, BitcoinSecret counterPartyRevokePrivateKey)
         {
             var settings = settingsProvider.GetSettings();
+            var asset = Common.Assets.Helper.GetAssetFromName(settings.Assets, assetName);
 
             try
             {
@@ -958,130 +959,116 @@ namespace BlockchainStateManager.Offchain
                     throw new Exception("Proper output to spend was not found.");
                 }
 
-                var dummyMultisig = Helper.GetMultiSigFromTwoPubKeys(clientPubkey, hubPubkey);
+                var commitmentHash = commtimentTransaction.GetHash().ToString();
+                ColoredCoin inputColoredCoin = null;
+                Coin inputCoin = null;
 
-                var walletOutputs = await blockchainExplorerHelper.GetWalletOutputs(multisigAddress);
-                if (walletOutputs.Item2)
+                var redeemScript = CreateSpecialCommitmentScript(counterPartyPubkey, selfPubkey, lockingPubkey, activationIn10Minutes);
+                Coin bearer = null;
+                bearer = new Coin(commtimentTransaction, (uint)outputNumber);
+                ScriptCoin scriptCoin = new ScriptCoin(bearer, redeemScript);
+
+                if (Common.Assets.Helper.IsRealAsset(assetName))
                 {
-                    throw new Exception(walletOutputs.Item3);
+                    inputColoredCoin = new ColoredCoin(
+                        new AssetMoney(new AssetId(new BitcoinAssetId(asset.AssetId)), Convert.ToInt64(assetAmountToBeSpent * asset.MultiplyFactor)),
+                        scriptCoin);
                 }
                 else
                 {
-                    var commitmentHash = commtimentTransaction.GetHash().ToString();
-                    ColoredCoin inputColoredCoin = null;
-                    Coin inputCoin = null;
+                    inputCoin = scriptCoin;
+                }
 
-                    var redeemScript = CreateSpecialCommitmentScript(counterPartyPubkey, selfPubkey, lockingPubkey, activationIn10Minutes);
-                    Coin bearer = null;
-                    foreach (var item in walletOutputs.Item1)
+                if (inputColoredCoin == null && inputCoin == null)
+                {
+                    throw new Exception("Some errors occured while creating input coin to be consumed");
+                }
+                else
+                {
+                    BitcoinAddress destAddress = null;
+                    if (spendingPrivateKey != null)
                     {
-                        if (item.GetTransactionHash() == commitmentHash
-                            && item.GetOutputIndex() == outputNumber)
-                        {
-                            bearer = new Coin(commtimentTransaction, (uint)outputNumber);
-                            ScriptCoin scriptCoin = new ScriptCoin(bearer, redeemScript);
-
-                            if (Common.Assets.Helper.IsRealAsset(assetName))
-                            {
-                                inputColoredCoin = new ColoredCoin(
-                                    new AssetMoney(new AssetId(new BitcoinAssetId(item.GetAssetId())), item.GetAssetAmount()),
-                                    scriptCoin);
-                            }
-                            else
-                            {
-                                inputCoin = scriptCoin;
-                            }
-                        }
-                    }
-
-                    if (inputColoredCoin == null && inputCoin == null)
-                    {
-                        throw new Exception("Some errors occured while creating input coin to be consumed");
+                        destAddress = counterPartyPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network);
                     }
                     else
                     {
-                        BitcoinPubKeyAddress destAddress = null;
-                        if (spendingPrivateKey != null)
+                        if (clientSendsCommitmentToHub)
                         {
-                            destAddress = counterPartyPubkey.
-                              GetAddress(settings.Network);
+                            destAddress = selfPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network);
                         }
                         else
                         {
-                            if (clientSendsCommitmentToHub)
-                            {
-                                destAddress = selfPubkey.
-                                  GetAddress(settings.Network);
-                            }
-                            else
-                            {
-                                destAddress = hubPubkey.
-                                    GetAddress(settings.Network);
-                            }
+                            destAddress = hubPubkey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network);
                         }
-
-                        TransactionBuilder builder = new TransactionBuilder();
-                        if (Common.Assets.Helper.IsRealAsset(assetName))
-                        {
-                            var coloredCoinToBeAdded = inputColoredCoin;
-                            builder.AddCoins(coloredCoinToBeAdded);
-                            builder.SendAsset(destAddress, coloredCoinToBeAdded.Amount);
-                        }
-                        else
-                        {
-                            var coinToBeAdded = inputCoin;
-                            builder.AddCoins(coinToBeAdded);
-                            builder.Send(destAddress, coinToBeAdded.Amount);
-                        }
-
-                        await builder.AddEnoughPaymentFee(settings.FeeAddress);
-                        var tx = builder.BuildTransaction(false);
-                        tx.Version = 2;
-
-                        var sigHash = SigHash.All;
-                        for (int i = 0; i < tx.Inputs.Count; i++)
-                        {
-                            var input = tx.Inputs[i];
-
-                            if (input.PrevOut.Hash == bearer.Outpoint.Hash && input.PrevOut.N == bearer.Outpoint.N)
-                            {
-                                input = generateProperOutputSpender(input, tx, activationIn10Minutes, bearer, redeemScript, sigHash,
-                                    spendingPrivateKey, selfPrivateKey, counterPartyRevokePrivateKey);
-                                break;
-                            }
-                        }
-
-                        for (int i = 0; i < tx.Inputs.Count; i++)
-                        {
-                            var input = tx.Inputs[i];
-
-                            var inputTxId = input.PrevOut.Hash.ToString();
-
-                            Fee fee = null;
-                            using (BlockchainStateManagerContext context = new BlockchainStateManagerContext())
-                            {
-                                fee = (from item in context.Fees
-                                       where item.TransactionId == inputTxId && item.OutputNumber == input.PrevOut.N
-                                       select item).FirstOrDefault();
-                            }
-
-                            if (fee?.PrivateKey != null)
-                            {
-                                var secret = new BitcoinSecret(fee.PrivateKey);
-                                var script = (new BitcoinSecret(fee.PrivateKey)).ScriptPubKey;
-                                var hash = Script.SignatureHash(new Coin(input.PrevOut.Hash, input.PrevOut.N, fee.Satoshi, script), tx, sigHash);
-                                var signature = secret.PrivateKey.Sign(hash, sigHash);
-                                input.ScriptSig = PayToPubkeyHashTemplate.Instance.GenerateScriptSig(signature, secret.PubKey);
-                            }
-                        }
-
-                        var verfied = builder.Verify(tx);
-
-                        CommitmentCustomOutputSpendingTransaction response
-                            = new CommitmentCustomOutputSpendingTransaction { TransactionHex = tx.ToHex() };
-
-                        return response;
                     }
+
+                    TransactionBuilder builder = new TransactionBuilder();
+                    if (Common.Assets.Helper.IsRealAsset(assetName))
+                    {
+                        var coloredCoinToBeAdded = inputColoredCoin;
+                        builder.AddCoins(coloredCoinToBeAdded);
+                        builder.SendAsset(destAddress, coloredCoinToBeAdded.Amount);
+                    }
+                    else
+                    {
+                        var feeAmount = 100000;
+                        var coinToBeAdded = inputCoin;
+                        builder.AddCoins(coinToBeAdded);
+                        builder.Send(destAddress, coinToBeAdded.Amount - feeAmount);
+                        builder.SendFees(feeAmount);
+                    }
+
+                    if (Common.Assets.Helper.IsRealAsset(assetName))
+                    {
+                        await builder.AddEnoughPaymentFee(settings.FeeAddress);
+                    }
+
+                    var tx = builder.BuildTransaction(false);
+                    tx.Version = 2;
+
+                    var sigHash = SigHash.All;
+                    for (int i = 0; i < tx.Inputs.Count; i++)
+                    {
+                        var input = tx.Inputs[i];
+
+                        if (input.PrevOut.Hash == bearer.Outpoint.Hash && input.PrevOut.N == bearer.Outpoint.N)
+                        {
+                            input = generateProperOutputSpender(input, tx, activationIn10Minutes, bearer, redeemScript, sigHash,
+                                spendingPrivateKey, selfPrivateKey, counterPartyRevokePrivateKey);
+                            break;
+                        }
+                    }
+
+                    for (int i = 0; i < tx.Inputs.Count; i++)
+                    {
+                        var input = tx.Inputs[i];
+
+                        var inputTxId = input.PrevOut.Hash.ToString();
+
+                        Fee fee = null;
+                        using (BlockchainStateManagerContext context = new BlockchainStateManagerContext())
+                        {
+                            fee = (from item in context.Fees
+                                   where item.TransactionId == inputTxId && item.OutputNumber == input.PrevOut.N
+                                   select item).FirstOrDefault();
+                        }
+
+                        if (fee?.PrivateKey != null)
+                        {
+                            var secret = new BitcoinSecret(fee.PrivateKey);
+                            var script = (new BitcoinSecret(fee.PrivateKey)).ScriptPubKey;
+                            var hash = Script.SignatureHash(new Coin(input.PrevOut.Hash, input.PrevOut.N, fee.Satoshi, script), tx, sigHash);
+                            var signature = secret.PrivateKey.Sign(hash, sigHash);
+                            input.ScriptSig = PayToPubkeyHashTemplate.Instance.GenerateScriptSig(signature, secret.PubKey);
+                        }
+                    }
+
+                    var verfied = builder.Verify(tx);
+
+                    CommitmentCustomOutputSpendingTransaction response
+                        = new CommitmentCustomOutputSpendingTransaction { TransactionHex = tx.ToHex() };
+
+                    return response;
                 }
             }
             catch (Exception exp)
@@ -1091,10 +1078,10 @@ namespace BlockchainStateManager.Offchain
         }
 
         public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionForTimeActivatePart(string commitmentTransactionHex,
-            string spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName,
+            string spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName, double assetAmountToBeSpent,
             PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub)
         {
-            return await CreateCommitmentSpendingTransactionCore(commitmentTransactionHex, spendingPrivateKey, clientPubkey, hubPubkey, assetName,
+            return await CreateCommitmentSpendingTransactionCore(commitmentTransactionHex, spendingPrivateKey, clientPubkey, hubPubkey, assetName, assetAmountToBeSpent,
                 lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub,
                 GenerateCustomScriptTimeActivateOutputSpender, null, null);
         }
