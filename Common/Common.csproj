@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NBitcoin" Version="4.0.0.11" />
+    <PackageReference Include="NBitcoin" Version="4.0.0.19" />
     <PackageReference Include="QBitNinja.Client" Version="1.0.3.39" />
   </ItemGroup>
 

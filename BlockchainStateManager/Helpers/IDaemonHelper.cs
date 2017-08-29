@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,5 +11,7 @@ namespace BlockchainStateManager.Helpers
     {
         Task<IEnumerable<string>> GenerateBlocks(int count);
         Task<Tuple<bool, string, string>> GetTransactionHex(string transactionId);
+
+        Task<uint256> SendBitcoinToDestination(BitcoinAddress destinationAddress, Money money);
     }
 }

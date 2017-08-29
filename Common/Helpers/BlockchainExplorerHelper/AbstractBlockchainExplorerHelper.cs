@@ -91,6 +91,16 @@ namespace Common.Helpers.BlockchainExplorerHelper
                     }
                 }
             }
+            else
+            {
+                foreach (var item in input)
+                {
+                    if (string.IsNullOrEmpty(item.GetAssetId()))
+                    {
+                        outputs.Add(item);
+                    }
+                }
+            }
 
             return outputs.ToArray();
         }
@@ -366,12 +376,19 @@ namespace Common.Helpers.BlockchainExplorerHelper
 
         public async Task<Tuple<ColoredCoin[], Coin[]>> GetColoredUnColoredCoins(UniversalUnspentOutput[] walletOutputs, string assetId)
         {
-            var walletAssetOutputs = GetWalletOutputsForAsset(walletOutputs, assetId);
+            ColoredCoin[] walletColoredCoins = new ColoredCoin[0];
+
+            if (assetId != null)
+            {
+                var walletAssetOutputs = GetWalletOutputsForAsset(walletOutputs, assetId);
+                var walletColoredTransactions = await GetTransactionsHex(walletAssetOutputs);
+                walletColoredCoins = GenerateWalletColoredCoins(walletColoredTransactions, walletAssetOutputs, assetId);
+            }
+
             var walletUncoloredOutputs = GetWalletOutputsUncolored(walletOutputs);
-            var walletColoredTransactions = await GetTransactionsHex(walletAssetOutputs);
             var walletUncoloredTransactions = await GetTransactionsHex(walletUncoloredOutputs);
-            var walletColoredCoins = GenerateWalletColoredCoins(walletColoredTransactions, walletAssetOutputs, assetId);
             var walletUncoloredCoins = GenerateWalletUnColoredCoins(walletUncoloredTransactions, walletUncoloredOutputs);
+
             return new Tuple<ColoredCoin[], Coin[]>(walletColoredCoins, walletUncoloredCoins);
         }
     }

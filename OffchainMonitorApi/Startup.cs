@@ -21,12 +21,6 @@ namespace OffchainMonitorApi
 {
     public class Startup
     {
-#if DEBUG
-        const string SettingsBlobName = "bitcoinsettings.json";
-#else
-        const string SettingsBlobName = "globalsettings.json";
-#endif
-
         public IConfigurationRoot Configuration { get; }
 
         public Startup(IHostingEnvironment env)

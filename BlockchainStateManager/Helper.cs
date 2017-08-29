@@ -2,6 +2,7 @@
 using BlockchainStateManager.Helpers;
 using BlockchainStateManager.Models;
 using BlockchainStateManager.Settings;
+using Common.Helpers.BlockchainExplorerHelper;
 using Common.Settings;
 using NBitcoin;
 using System;
@@ -12,13 +13,13 @@ namespace BlockchainStateManager
 {
     public class Helper
     {
-        static IDaemonHelper daemonHelper = null;
         static ISettingsProvider settingsProvider = null;
+        static IBlockchainExplorerHelper blockchainExplorerHelper = null;
 
         static Helper()
         {
-            daemonHelper = Bootstrap.container.Resolve<IDaemonHelper>();
             settingsProvider = Bootstrap.container.Resolve<ISettingsProvider>();
+            blockchainExplorerHelper = Bootstrap.container.Resolve<IBlockchainExplorerHelper>();
         }
 
         private static Transaction SignMultisigWithSinglePrivateKey(TxIn input, int inputIndex, Transaction[] previousTransactions, Transaction tx,
@@ -128,17 +129,10 @@ namespace BlockchainStateManager
                 previousTransactions = new Transaction[tx.Inputs.Count];
                 for (int i = 0; i < previousTransactions.Count(); i++)
                 {
-                    // var txResponse = await GetTransactionHex(tx.Inputs[i].PrevOut.Hash.ToString(), WebSettings.ConnectionParams);
-                    var txResponse = await daemonHelper.GetTransactionHex
+                    var txResponse = await blockchainExplorerHelper.GetTransactionHex
                         (tx.Inputs[i].PrevOut.Hash.ToString());
 
-                    if (txResponse.Item1)
-                    {
-                        throw new Exception(string.Format("Error while retrieving transaction {0}, error is: {1}",
-                            tx.Inputs[i].PrevOut.Hash.ToString(), txResponse.Item2));
-                    }
-
-                    previousTransactions[i] = new Transaction(txResponse.Item3);
+                    previousTransactions[i] = new Transaction(txResponse);
                 }
             }
 
@@ -195,9 +189,10 @@ namespace BlockchainStateManager
                 hubPubkey });
 
             var retValue = new Multisig();
-            retValue.MultiSigAddress = multiSigAddress.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToString();
+            retValue.MultiSigAddress = multiSigAddress.GetScriptAddress(settings.Network).ToString();
+            retValue.SegwitMultiSigAddress = multiSigAddress.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToString();
             retValue.MultiSigScript = multiSigAddress.ToString();
-            retValue.WalletAddress = clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(network).ToString();
+            retValue.SegwitWalletAddress = clientPubkey.WitHash.ScriptPubKey.GetScriptAddress(network).ToString();
             return retValue;
         }
 

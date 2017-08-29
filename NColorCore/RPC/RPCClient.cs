@@ -110,7 +110,7 @@ namespace NColorCore.RPC
             return txid;
         }
 
-        public async Task<uint256> IssueAssetAsync(BitcoinAddress sourceAddress, BitcoinColoredAddress toAddress, int amount)
+        public async Task<uint256> IssueAssetAsync(BitcoinAddress sourceAddress, BitcoinColoredAddress toAddress, long amount)
         {
             List<object> parameters = new List<object>();
             parameters.Add(sourceAddress.ToString());

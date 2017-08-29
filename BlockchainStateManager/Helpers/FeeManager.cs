@@ -101,6 +101,11 @@ namespace BlockchainStateManager.Helpers
                         var txHash = tx.GetHash().ToString();
                         for (uint i = 0; i < feeCount; i++)
                         {
+                            if (tx.Outputs[i].Value != feeAmount)
+                            {
+                                continue;
+                            }
+
                             fees.Add(new Fee
                             {
                                 Consumed = false,

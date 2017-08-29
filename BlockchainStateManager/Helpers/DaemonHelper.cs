@@ -61,5 +61,13 @@ namespace BlockchainStateManager.Helpers
             }
             return new Tuple<bool, string, string>(errorOccured, errorMessage, transactionHex);
         }
+
+        public async Task<uint256> SendBitcoinToDestination(BitcoinAddress destinationAddress, Money money)
+        {
+            var settings = settingsProvider.GetSettings();
+
+            var client = Helper.GetRPCClient(settings);
+            return await client.SendToAddressAsync(destinationAddress, money);
+        }
     }
 }

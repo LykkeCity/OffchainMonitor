@@ -42,16 +42,16 @@ namespace BlockchainStateManager.Offchain
                     channelAssetName));
             }
 
-            var walletOutputs = await blockchainExplorerHelper.GetWalletOutputs(multisig.MultiSigAddress);
+            var walletOutputs = await blockchainExplorerHelper.GetWalletOutputs(multisig.SegwitMultiSigAddress);
             if (walletOutputs.Item2)
             {
                 throw new Exception(string.Format
-                    ("Error in getting outputs for wallet: {0}, the error is {1}", multisig.MultiSigAddress, walletOutputs.Item3));
+                    ("Error in getting outputs for wallet: {0}, the error is {1}", multisig.SegwitMultiSigAddress, walletOutputs.Item3));
             }
             else
             {
-                var assetOutputs = blockchainExplorerHelper.GetWalletOutputsForAsset(walletOutputs.Item1, asset.AssetId);
-                var coins = await blockchainExplorerHelper.GetColoredUnColoredCoins(assetOutputs, asset.AssetId);
+                // var assetOutputs = blockchainExplorerHelper.GetWalletOutputsForAsset(walletOutputs.Item1, asset.AssetId);
+                var coins = await blockchainExplorerHelper.GetColoredUnColoredCoins(walletOutputs.Item1, asset?.AssetId);
                 long totalAmount = 0;
                 if (asset == null)
                 {
@@ -63,7 +63,7 @@ namespace BlockchainStateManager.Offchain
                 }
 
                 return await GenerateUnsignedChannelSetupTransactionCore(clientPubkey, clientContributedAmount, hubPubkey,
-                    hubContributedAmount, totalAmount / asset.MultiplyFactor, channelAssetName, channelTimeoutInMinutes);
+                    hubContributedAmount, totalAmount / (asset?.MultiplyFactor ?? (long)Constants.BTCToSathoshiMultiplicationFactor), channelAssetName, channelTimeoutInMinutes);
             }
         }
 
@@ -92,7 +92,7 @@ namespace BlockchainStateManager.Offchain
                 long[] contributedAmount = new long[3];
                 long[] requiredAssetAmount = new long[3];
                 requiredAssetAmount[0] = (long)(clientContributedAmount * assetMultiplyFactor);
-                requiredAssetAmount[1] = (long)(multisigNewlyAddedAmount * asset.MultiplyFactor);
+                requiredAssetAmount[1] = (long)(multisigNewlyAddedAmount * assetMultiplyFactor);
                 requiredAssetAmount[2] = (long)(hubContributedAmount * assetMultiplyFactor);
 
                 IList<ICoin>[] coinToBeUsed = new IList<ICoin>[3];
@@ -109,7 +109,7 @@ namespace BlockchainStateManager.Offchain
                             inputAmount[i] = clientContributedAmount;
                             break;
                         case 1:
-                            inputAddress[i] = BitcoinScriptAddress.Create(multisig.MultiSigAddress);
+                            inputAddress[i] = BitcoinScriptAddress.Create(multisig.SegwitMultiSigAddress);
                             inputAmount[i] = multisigNewlyAddedAmount;
                             break;
                         case 2:
@@ -207,7 +207,7 @@ namespace BlockchainStateManager.Offchain
                 var returnValue = 0L;
 
                 var numberOfColoredCoinOutputs = 0;
-                var multisigAddress = BitcoinAddress.Create(multisig.MultiSigAddress);
+                var multisigAddress = BitcoinAddress.Create(multisig.SegwitMultiSigAddress);
 
                 for (int i = 0; i < 3; i++)
                 {
@@ -242,7 +242,12 @@ namespace BlockchainStateManager.Offchain
                 {
                     if (btcAsset)
                     {
-                        builder.Send(multisigAddress, new Money(directSendSum));
+                        var commitmentFee = await FeeManager.GetOneFeeCoin();
+                        Coin selectedCoin = new Coin(new uint256(commitmentFee.TransactionId), (uint)commitmentFee.OutputNumber,
+                            new Money(commitmentFee.Satoshi), new Script(commitmentFee.Script));
+                        builder.AddKeys(new BitcoinSecret(commitmentFee.PrivateKey)).AddCoins(selectedCoin);
+
+                        builder.Send(multisigAddress, new Money(directSendSum + commitmentFee.Satoshi));
                     }
                     else
                     {
@@ -261,6 +266,7 @@ namespace BlockchainStateManager.Offchain
                             (channelTimeoutInMinutes == 0 ? now.AddYears(1000) : now.AddMinutes(channelTimeoutInMinutes));
 
                         await builder.AddEnoughPaymentFee(settings.FeeAddress);
+
                         txHex = builder.BuildTransaction(true).ToHex();
                         var txHash = Convert.ToString(SHA256Managed.Create().ComputeHash(Helper.StringToByteArray(txHex)));
                         var channel = context.OffchainChannels.Add(new OffchainChannel { unsignedTransactionHash = txHash });
@@ -292,7 +298,7 @@ namespace BlockchainStateManager.Offchain
                                     OutputNumber = toBeStoredTxOutputNumber,
                                     ReservationCreationDate = now,
                                     ReservedForChannel = channel.ChannelId,
-                                    ReservedForMultisig = multisig.MultiSigAddress,
+                                    ReservedForMultisig = multisig.SegwitMultiSigAddress,
                                     ReservationEndDate = reservationEndDate
                                 };
                                 context.ChannelCoins.Add(coin);
@@ -436,16 +442,16 @@ namespace BlockchainStateManager.Offchain
             for (uint i = 0; i < fullySignedTx.Outputs.Count; i++)
             {
                 if (fullySignedTx.Outputs[i].ScriptPubKey
-                    .GetDestinationAddress(settings.Network)?.ToString() == multisig.MultiSigAddress)
+                    .GetDestinationAddress(settings.Network)?.ToString() == multisig.SegwitMultiSigAddress)
                 {
                     totalInputSatoshi += fullySignedTx.Outputs[i].Value.Satoshi;
                     if (btcAsset)
                     {
                         if (fullySignedTx.Outputs[i].Value
-                            != (long)((clientContributedAmount + hubContributedAmount) * Constants.BTCToSathoshiMultiplicationFactor))
+                            < (long)((clientContributedAmount + hubContributedAmount) * Constants.BTCToSathoshiMultiplicationFactor))
                         {
                             errorMessage =
-                                string.Format("The btc values in multisig output does not much sum of the input parameters {0} and {1}."
+                                string.Format("The btc values in multisig is smaller than the sum of the input parameters {0} and {1}."
                                 , clientContributedAmount, hubContributedAmount);
                             return null;
                         }
@@ -463,11 +469,15 @@ namespace BlockchainStateManager.Offchain
                 }
             }
 
-            var dummyCoinToBeRemoved = new Coin(new uint256(0), 0,
+            if (!btcAsset)
+            {
+                var dummyCoinToBeRemoved = new Coin(new uint256(0), 0,
                 new Money(1 * Constants.BTCToSathoshiMultiplicationFactor),
                 hubPubkey.GetAddress(settings.Network).ScriptPubKey);
-            builder.AddCoins(dummyCoinToBeRemoved);
-            totalInputSatoshi += (long)(1 * Constants.BTCToSathoshiMultiplicationFactor);
+            
+                builder.AddCoins(dummyCoinToBeRemoved);
+                totalInputSatoshi += (long)(1 * Constants.BTCToSathoshiMultiplicationFactor);
+            }
 
             var clientAddress = clientPubkey.GetAddress(settings.Network);
             var hubAddress = hubPubkey.GetAddress(settings.Network);
@@ -532,18 +542,21 @@ namespace BlockchainStateManager.Offchain
             errorMessage = null;
             var tx = builder.BuildTransaction(true, SigHash.All | SigHash.AnyoneCanPay);
 
-            TxIn toBeRemovedInput = null;
-            foreach (var item in tx.Inputs)
+            if (!btcAsset)
             {
-                if (item.PrevOut.Hash == new uint256(0))
+                TxIn toBeRemovedInput = null;
+                foreach (var item in tx.Inputs)
                 {
-                    toBeRemovedInput = item;
-                    break;
+                    if (item.PrevOut.Hash == new uint256(0))
+                    {
+                        toBeRemovedInput = item;
+                        break;
+                    }
                 }
-            }
-            if (toBeRemovedInput != null)
-            {
-                tx.Inputs.Remove(toBeRemovedInput);
+                if (toBeRemovedInput != null)
+                {
+                    tx.Inputs.Remove(toBeRemovedInput);
+                }
             }
 
             return tx.ToHex();
@@ -852,7 +865,7 @@ namespace BlockchainStateManager.Offchain
 
         public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionForMultisigPart(string commitmentTransactionHex, PubKey clientPubkey,
             PubKey hubPubkey, string assetName, PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
-            string selfPrivateKey, string counterPartyRevokePrivateKey)
+            BitcoinSecret selfPrivateKey, BitcoinSecret counterPartyRevokePrivateKey)
         {
             return await CreateCommitmentSpendingTransactionCore(commitmentTransactionHex, null, clientPubkey, hubPubkey, assetName,
                 lockingPubkey, activationIn10Minutes, clientSendsCommitmentToHub,
@@ -860,7 +873,7 @@ namespace BlockchainStateManager.Offchain
         }
 
         public TxIn GenerateCustomScriptTimeActivateOutputSpender(TxIn input, Transaction tx, int activationIn10Minutes, Coin bearer,
-            Script redeemScript, SigHash sigHash, string spendingPrivateKey, string selfPrivateKey, string counterPartyRevokePrivateKey)
+            Script redeemScript, SigHash sigHash, string spendingPrivateKey, BitcoinSecret selfPrivateKey, BitcoinSecret counterPartyRevokePrivateKey)
         {
             input.Sequence = new Sequence(activationIn10Minutes);
 
@@ -877,13 +890,10 @@ namespace BlockchainStateManager.Offchain
         }
 
         public TxIn GenerateCustomeScriptMultisigScriptOutputSpender(TxIn input, Transaction tx, int activationIn10Minutes, Coin bearer,
-            Script redeemScript, SigHash sigHash, string spendingPrivateKey, string selfPrivateKey, string counterPartyRevokePrivateKey)
+            Script redeemScript, SigHash sigHash, string spendingPrivateKey, BitcoinSecret selfPrivateKey, BitcoinSecret counterPartyRevokePrivateKey)
         {
-            var selfSecret = new BitcoinSecret(selfPrivateKey);
-            var counterPartyRevokeSecret = new BitcoinSecret(counterPartyRevokePrivateKey);
-
-            var selfSignature = tx.SignInput(selfSecret, new Coin(input.PrevOut.Hash, input.PrevOut.N, new Money(bearer.Amount), redeemScript), sigHash);
-            var counterPartyRevokeSignature = tx.SignInput(counterPartyRevokeSecret, new Coin(input.PrevOut.Hash, input.PrevOut.N, new Money(bearer.Amount), redeemScript), sigHash);
+            var selfSignature = tx.SignInput(selfPrivateKey, new Coin(input.PrevOut.Hash, input.PrevOut.N, new Money(bearer.Amount), redeemScript), sigHash);
+            var counterPartyRevokeSignature = tx.SignInput(counterPartyRevokePrivateKey, new Coin(input.PrevOut.Hash, input.PrevOut.N, new Money(bearer.Amount), redeemScript), sigHash);
 
             var p2shScript = PayToScriptHashTemplate.Instance.GenerateScriptSig(new PayToScriptHashSigParameters
             {
@@ -903,8 +913,8 @@ namespace BlockchainStateManager.Offchain
         public async Task<CommitmentCustomOutputSpendingTransaction> CreateCommitmentSpendingTransactionCore(string commitmentTransactionHex,
             string spendingPrivateKey, PubKey clientPubkey, PubKey hubPubkey, string assetName,
             PubKey lockingPubkey, int activationIn10Minutes, bool clientSendsCommitmentToHub,
-            Func<TxIn, Transaction, int, Coin, Script, SigHash, string, string, string, TxIn> generateProperOutputSpender,
-            string selfPrivateKey, string counterPartyRevokePrivateKey)
+            Func<TxIn, Transaction, int, Coin, Script, SigHash, string, BitcoinSecret, BitcoinSecret, TxIn> generateProperOutputSpender,
+            BitcoinSecret selfPrivateKey, BitcoinSecret counterPartyRevokePrivateKey)
         {
             var settings = settingsProvider.GetSettings();
 

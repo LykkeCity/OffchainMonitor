@@ -14,13 +14,19 @@ namespace BlockchainStateManager.Models
             set;
         }
 
+        public string SegwitMultiSigAddress
+        {
+            get;
+            set;
+        }
+
         public string MultiSigScript
         {
             get;
             set;
         }
 
-        public string WalletAddress
+        public string SegwitWalletAddress
         {
             get;
             set;
