@@ -42,7 +42,7 @@ namespace OffchainMonitorApi.Binder
 
             // ioc.RegisterType<RetryFailedTransactionService>().As<IRetryFailedTransactionService>();
 
-            ioc.RegisterSource(new AnyConcreteTypeNotAlreadyRegisteredSource());
+            //ioc.RegisterSource(new AnyConcreteTypeNotAlreadyRegisteredSource());
         }
     }
 }

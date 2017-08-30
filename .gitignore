@@ -212,3 +212,5 @@ _Pvt_Extensions/
 ModelManifest.xml
 LykkeWalletServices/DB/LykkeServices
 LykkeWalletServices/DB/LykkeServicesRemote
+
+appsettings.Development.json
