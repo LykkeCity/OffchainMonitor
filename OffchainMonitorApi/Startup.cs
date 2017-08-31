@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using BitcoinApi.Filters;
 using Core.Settings;
@@ -7,15 +8,15 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
-using Swashbuckle.Swagger.Model;
+using Swashbuckle.AspNetCore.Swagger;
 using OffchainMonitorApi.Middleware;
 using OffchainMonitorApi.Binder;
 using SqlliteRepositories;
 using LkeServices.Triggers;
 using System.Reflection;
-using Core.Repositories.Transactions;
+using LkeServices.Triggers.Bindings;
+using OffchainMonitorApi.Functions;
 
 namespace OffchainMonitorApi
 {
@@ -48,11 +49,7 @@ namespace OffchainMonitorApi
 
             services.AddSwaggerGen(options =>
             {
-                options.SingleApiVersion(new Info
-                {
-                    Version = "v1",
-                    Title = "OffchainMonitor_Api"
-                });
+                options.SwaggerDoc("v1", new Info { Title = "OffchainMonitor_Api" });
                 options.DescribeAllEnumsAsStrings();
 
                 //Determine base path for the application.
@@ -65,7 +62,9 @@ namespace OffchainMonitorApi
 
             var builder = new SqlliteBinder().Bind(settings);
             builder.Populate(services);
-            //builder.RegisterControllers(typeof(MvcApplication).Assembly);
+            builder.RegisterType<TimerTriggerBinding>();
+            builder.RegisterType<QueueTriggerBinding>();
+            builder.RegisterType<CommitmentBroadcastCheck>();
             var container = builder.Build();
             var triggerHost = new TriggerHost(new AutofacServiceProvider(container));
             triggerHost.ProvideAssembly(GetType().GetTypeInfo().Assembly);
@@ -75,7 +74,7 @@ namespace OffchainMonitorApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             app.UseMiddleware<GlobalErrorHandlerMiddleware>();
             if (env.IsDevelopment())
@@ -84,7 +83,7 @@ namespace OffchainMonitorApi
             }
             app.UseMvc();
             app.UseSwagger();
-            app.UseSwaggerUi("swagger/ui/index");
+            app.UseSwaggerUI(x => x.SwaggerEndpoint("swagger/ui/index", "OffchainMonitor_Api"));
         }
     }
 }
