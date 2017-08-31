@@ -55,7 +55,7 @@ namespace LkeServices.Transactions
         private readonly IPregeneratedOutputsQueueFactory _pregeneratedOutputsQueueFactory;
         private readonly IBroadcastedOutputRepository _broadcastedOutputRepository;
         private readonly ILykkeTransactionBuilderService _lykkeTransactionBuilderService;
-        private readonly IBitcoinBroadcastService _broadcastService;
+        private readonly IRpcBitcoinClient _rpcBitcoinClient;
 
         public OffchainTransactionBuilderService(
             ITransactionBuildHelper transactionBuildHelper,
@@ -68,7 +68,8 @@ namespace LkeServices.Transactions
             ICommitmentRepository commitmentRepository,
             IPregeneratedOutputsQueueFactory pregeneratedOutputsQueueFactory,
             IBroadcastedOutputRepository broadcastedOutputRepository,
-            ILykkeTransactionBuilderService lykkeTransactionBuilderService, IBitcoinBroadcastService broadcastService)
+            ILykkeTransactionBuilderService lykkeTransactionBuilderService,
+            IRpcBitcoinClient rpcBitcoinClient)
         {
             _transactionBuildHelper = transactionBuildHelper;
             _connectionParams = connectionParams;
@@ -81,7 +82,7 @@ namespace LkeServices.Transactions
             _pregeneratedOutputsQueueFactory = pregeneratedOutputsQueueFactory;
             _broadcastedOutputRepository = broadcastedOutputRepository;
             _lykkeTransactionBuilderService = lykkeTransactionBuilderService;
-            _broadcastService = broadcastService;
+            _rpcBitcoinClient = rpcBitcoinClient;
         }
 
         public async Task<string> CreateTransfer(string clientPubKey, decimal amount, IAsset asset, string clientPrevPrivateKey)
@@ -281,7 +282,7 @@ namespace LkeServices.Transactions
 
                 await _lykkeTransactionBuilderService.SaveSpentOutputs(channel.ChannelId, channelTr);
 
-                await _broadcastService.BroadcastTransaction(channel.ChannelId, channelTr);                
+                await _rpcBitcoinClient.BroadcastTransaction(channelTr, channel.ChannelId);
 
                 await _offchainChannelRepository.SetChannelBroadcasted(address.MultisigAddress, asset.Id);
 
@@ -326,7 +327,7 @@ namespace LkeServices.Transactions
 
                     var signedTr = new Transaction(signed);
                     var id = Guid.NewGuid();
-                    await _broadcastService.BroadcastTransaction(id, signedTr);
+                    await _rpcBitcoinClient.BroadcastTransaction(signedTr, id);
 
                     await _lykkeTransactionBuilderService.SaveSpentOutputs(id, signedTr);
 
@@ -368,7 +369,7 @@ namespace LkeServices.Transactions
                 var signed = await _signatureApiProvider.SignTransaction(transaction.ToHex());
                 var signedTr = new Transaction(signed);
                 
-                await _broadcastService.BroadcastTransaction(commitment.CommitmentId, signedTr);
+                await _rpcBitcoinClient.BroadcastTransaction(signedTr, commitment.CommitmentId);
 
                 await CloseChannel(commitment);
 

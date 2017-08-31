@@ -14,6 +14,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Update="OffchainMonitor.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="docker-compose.yml;Dockerfile;.dockerignore;appsettings.json">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>

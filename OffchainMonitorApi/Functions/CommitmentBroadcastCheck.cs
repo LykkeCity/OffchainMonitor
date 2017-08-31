@@ -18,16 +18,16 @@ namespace OffchainMonitorApi.Functions
         ISettingsRepository settingsRepository;
         IBitcoinTransactionService bitcoinTransactionService;
         IQBitNinjaApiCaller qBitNinjaApiCaller;
-        IBitcoinBroadcastService bitcoinBroadcastService;
+        IRpcBitcoinClient rpcBitcoinClient;
 
         public CommitmentBroadcastCheck(ISettingsRepository _settingsRepository,
             IBitcoinTransactionService _bitcoinTransactionService, IQBitNinjaApiCaller _qBitNinjaApiCaller,
-            IBitcoinBroadcastService _bitcoinBroadcastService)
+            IRpcBitcoinClient _rpcBitcoinClient)
         {
             settingsRepository = _settingsRepository;
             bitcoinTransactionService = _bitcoinTransactionService;
             qBitNinjaApiCaller = _qBitNinjaApiCaller;
-            bitcoinBroadcastService = _bitcoinBroadcastService;
+            rpcBitcoinClient = _rpcBitcoinClient;
         }
         [TimerTrigger("00:00:10")]
         public async Task CheckCommitmentBroadcast()
@@ -75,7 +75,7 @@ namespace OffchainMonitorApi.Functions
                     var respectivePunishment = await FindThePunishment(op, desiredOutput);
                     if (respectivePunishment != null)
                     {
-                        await bitcoinBroadcastService.BroadcastTransaction(new Guid(), respectivePunishment);
+                        await rpcBitcoinClient.BroadcastTransaction(respectivePunishment, new Guid());
                     }
                     else
                     {
