@@ -18,8 +18,14 @@ namespace OffchainMonitorApi.Binder
     {
         public ContainerBuilder Bind(BaseSettings settings)
         {
+            /*
             var logToTable = new LogToTable();
             var log = new LogToTableAndConsole(logToTable, new LogToConsole());
+            var ioc = new ContainerBuilder();
+            InitContainer(ioc, settings, log);
+            return ioc;
+            */
+            var log = new LogToConsole();
             var ioc = new ContainerBuilder();
             InitContainer(ioc, settings, log);
             return ioc;
@@ -42,7 +48,7 @@ namespace OffchainMonitorApi.Binder
 
             // ioc.RegisterType<RetryFailedTransactionService>().As<IRetryFailedTransactionService>();
 
-            //ioc.RegisterSource(new AnyConcreteTypeNotAlreadyRegisteredSource());
+            // ioc.RegisterSource(new AnyConcreteTypeNotAlreadyRegisteredSource());
         }
     }
 }

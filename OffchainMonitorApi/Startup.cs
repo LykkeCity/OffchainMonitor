@@ -49,7 +49,7 @@ namespace OffchainMonitorApi
 
             services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1", new Info { Title = "OffchainMonitor_Api" });
+                options.SwaggerDoc("v1", new Info { Title = "OffchainMonitor_Api", Version = "v1" });
                 options.DescribeAllEnumsAsStrings();
 
                 //Determine base path for the application.
@@ -83,7 +83,7 @@ namespace OffchainMonitorApi
             }
             app.UseMvc();
             app.UseSwagger();
-            app.UseSwaggerUI(x => x.SwaggerEndpoint("swagger/ui/index", "OffchainMonitor_Api"));
+            app.UseSwaggerUI(x => x.SwaggerEndpoint("/swagger/v1/swagger.json", "OffchainMonitor_Api"));
         }
     }
 }

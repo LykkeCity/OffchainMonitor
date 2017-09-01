@@ -32,8 +32,17 @@ namespace OffchainMonitorApi.Functions
         [TimerTrigger("00:00:10")]
         public async Task CheckCommitmentBroadcast()
         {
-            var multisig = await settingsRepository.Get<string>("multisig");
-            var netwok = await Helper.GetNetwork(settingsRepository);
+            string multisig = null;
+            Network network = Network.TestNet;
+            try
+            {
+                multisig = await settingsRepository.Get<string>("multisig");
+                network = await Helper.GetNetwork(settingsRepository);
+            }
+            catch(Exception exp)
+            {
+                return;
+            }
 
             var outputs = await qBitNinjaApiCaller.GetAddressBalance(multisig, true, true);
 
