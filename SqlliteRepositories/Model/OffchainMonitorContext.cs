@@ -60,6 +60,13 @@ namespace SqlliteRepositories.Model
             set;
         }
 
+        public string CommitmentTxId
+        {
+            get;
+            set;
+        }    
+        
+
         public string Punishment
         {
             get;

@@ -24,13 +24,74 @@ namespace OffchainMonitorApi.Controllers
             settingsRepository = _settingsRepository;
         }
 
-        // Until SegWit acivation since punishment requires commitment id, and it is not available until hub broadcasts it, this is not usable
-        // After segwit activation commitment id will be available independent of its signing
+        // CommitmentTxId = (new Transaction(commitment)).GetHash().ToString(),
         [HttpGet("AddCommitmentPunishmentPair")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
         public async Task<IActionResult> AddCommitmentPunishmentPair([FromQuery]string commitment,
+            [FromQuery]string punishment, [FromQuery]bool overwrite = false)
+        {
+            if (string.IsNullOrEmpty(commitment) || string.IsNullOrEmpty(punishment))
+            {
+                return BadRequest("Passed parameters should not be null or empty");
+            }
+            else
+            {
+                try
+                {
+                    Transaction cTx = new Transaction(commitment);
+                    Transaction pTx = new Transaction(punishment);
+
+                    using (OffchainMonitorContext context = new OffchainMonitorContext())
+                    {
+                        var matchedCommitment = (from c in context.Commitments
+                                                 where c.CommitmentTxId == cTx.GetHash().ToString()
+                                                 select c).FirstOrDefault();
+
+                        if (matchedCommitment != null)
+                        {
+                            if (overwrite == false)
+                            {
+                                return BadRequest("To overwrite an existing punishment for existing commitment id, the overwrite flag should bet set to true");
+                            }
+                            else
+                            {
+                                matchedCommitment.Commitment = commitment;
+                                matchedCommitment.Punishment = punishment;
+                            }
+                        }
+                        else
+                        {
+                            var newlyAddedCommitment = new CommitmentEntity
+                            {
+                                Commitment = commitment,
+                                CommitmentTxId = cTx.GetHash().ToString(),
+                                Punishment = punishment
+                            };
+
+                            await context.Commitments.AddAsync(newlyAddedCommitment);
+                        }
+
+                        await context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception exp)
+                {
+                    throw exp;
+                }
+
+                return Ok();
+            }
+        }
+
+        // Until SegWit acivation since punishment requires commitment id, and it is not available until hub broadcasts it, this is not usable
+        // After segwit activation commitment id will be available independent of its signing
+        [HttpGet("AddCommitmentPunishmentPairOldDesign")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> AddCommitmentPunishmentPairOldDesign([FromQuery]string commitment,
             [FromQuery]string punishment)
         {
             if (string.IsNullOrEmpty(commitment) || string.IsNullOrEmpty(punishment))

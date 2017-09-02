@@ -17,6 +17,7 @@ namespace OffchainMonitorApi.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> SetSettingsValue([FromQuery]string key, [FromQuery]string value)
         {
+            key = key.Trim();
             if(string.IsNullOrEmpty(key))
             {
                 return BadRequest("Key should not be null or empty.");
@@ -64,6 +65,7 @@ namespace OffchainMonitorApi.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> GetSettingsValue([FromQuery]string key)
         {
+            key = key.Trim();
             if (string.IsNullOrEmpty(key))
             {
                 return BadRequest("Key should not be null or empty.");
