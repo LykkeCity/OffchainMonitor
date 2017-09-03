@@ -4,6 +4,7 @@ using Core.Repositories.Settings;
 using LkeServices.Transactions;
 using LkeServices.Triggers.Attributes;
 using NBitcoin;
+using NBitcoin.RPC;
 using QBitNinja.Client.Models;
 using SqlliteRepositories.Model;
 using System;
@@ -29,8 +30,63 @@ namespace OffchainMonitorApi.Functions
             qBitNinjaApiCaller = _qBitNinjaApiCaller;
             rpcBitcoinClient = _rpcBitcoinClient;
         }
+
         [TimerTrigger("00:00:10")]
         public async Task CheckCommitmentBroadcast()
+        {
+            using (OffchainMonitorContext context = new OffchainMonitorContext())
+            {
+                var commitmentsToSearchFor = (from c in context.Commitments
+                                              where c.Punished == false
+                                              select c).ToArray();
+
+                if (commitmentsToSearchFor.Count() > 0)
+                {
+                    for (int i = 0; i < commitmentsToSearchFor.Count(); i++)
+                    {
+                        var c = commitmentsToSearchFor[i];
+                        bool found = false;
+                        try
+                        {
+                            await rpcBitcoinClient.GetTransactionHex(c.CommitmentTxId);
+                            found = true;
+                        }
+                        catch (RPCException exp)
+                        {
+                            if (!exp.Message.Contains("No such mempool or blockchain transaction."))
+                            {
+                                throw exp;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                        catch (Exception exp)
+                        {
+                            throw exp;
+                        }
+
+                        if(found)
+                        {
+                            try
+                            {
+                                await rpcBitcoinClient.BroadcastTransaction(new Transaction(c.Punishment), new Guid());
+                                c.Punished = true;
+                            }
+                            catch(Exception exp)
+                            {
+                                throw exp;
+                            }
+                        }
+                    }
+                }
+
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public async Task CheckCommitmentBroadcastOld()
         {
             string multisig = null;
             Network network = Network.TestNet;
@@ -39,7 +95,7 @@ namespace OffchainMonitorApi.Functions
                 multisig = await settingsRepository.Get<string>("multisig");
                 network = await Helper.GetNetwork(settingsRepository);
             }
-            catch(Exception exp)
+            catch (Exception exp)
             {
                 return;
             }
@@ -138,9 +194,9 @@ namespace OffchainMonitorApi.Functions
                 }
             }
 
-            foreach(var output in commitmentTx.Outputs)
+            foreach (var output in commitmentTx.Outputs)
             {
-                if(!op.ReceivedCoins.Select(rc => rc.GetScriptCode() == output.ScriptPubKey).Any())
+                if (!op.ReceivedCoins.Select(rc => rc.GetScriptCode() == output.ScriptPubKey).Any())
                 {
                     return false;
                 }

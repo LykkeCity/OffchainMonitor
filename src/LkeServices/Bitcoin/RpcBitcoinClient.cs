@@ -25,15 +25,11 @@ namespace LkeServices.Bitcoin
         public async Task BroadcastTransaction(Transaction tr, Guid transactionId)
         {
             await _client.SendRawTransactionAsync(tr);
-
-            await _broadcastedTransactionRepository.InsertTransaction(tr.GetHash().ToString(), transactionId);
-
-            await _broadcastedTransactionRepository.SaveToBlob(transactionId, tr.ToHex());
         }
 
         public async Task<string> GetTransactionHex(string trId)
         {
-            return (await _client.GetRawTransactionAsync(uint256.Parse(trId))).ToHex();
+            return (await _client.GetRawTransactionAsync(uint256.Parse(trId)))?.ToHex();
         }
 
         public Task<int> GetBlockCount()

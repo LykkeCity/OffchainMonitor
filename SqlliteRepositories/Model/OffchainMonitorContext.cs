@@ -79,6 +79,12 @@ namespace SqlliteRepositories.Model
             get;
             set;
         }
+
+        public bool Punished
+        {
+            get;
+            set;
+        }
     }
 
     public class MultisigOutputEntity

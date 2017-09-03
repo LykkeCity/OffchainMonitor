@@ -340,24 +340,27 @@ namespace BlockchainStateManager
 
                 // var txSendingResult = await AddEnoughFeesToTransaction
                 // (new Transaction(hubSignedCommitment));
-                var txSendingResult = new Transaction(hubSignedCommitment);
-                await transactionBroadcaster.BroadcastTransactionToBlockchain
-                    (txSendingResult.ToHex());
-                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
-                    (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txSendingResult.GetHash().ToString() });
-                await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
-                    (blockchainExplorerHelper.HasBalanceIndexedZeroConfirmation, new string[] { txSendingResult.GetHash().ToString() },
-                    clientPrivateKey.PubKey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToString());
+                //var txSendingResult = new Transaction(hubSignedCommitment);
+                //await transactionBroadcaster.BroadcastTransactionToBlockchain
+                //    (txSendingResult.ToHex());
+                //await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
+                //    (blockchainExplorerHelper.HasTransactionIndexed, new string[] { txSendingResult.GetHash().ToString() });
+                //await blockchainExplorerHelper.WaitUntillBlockchainExplorerHasIndexed
+                //    (blockchainExplorerHelper.HasBalanceIndexedZeroConfirmation, new string[] { txSendingResult.GetHash().ToString() },
+                //    clientPrivateKey.PubKey.WitHash.ScriptPubKey.GetScriptAddress(settings.Network).ToString());
                 
 
-                bool v = await VerifyTransaction(txSendingResult);
+                // bool v = await VerifyTransaction(txSendingResult);
                 var punishmentToLog = commitmentSpendingResp.TransactionHex;
 
                 using (StreamWriter writer = new StreamWriter("log.txt"))
                 {
                     StringBuilder builder = new StringBuilder();
-                    builder.AppendLine("Commitment:");
+                    builder.AppendLine("HubUnsignedCommitment:");
                     builder.AppendLine(commitmentToLog);
+
+                    builder.AppendLine("HubSignedCommitment");
+                    builder.AppendLine(hubSignedCommitment);
 
                     builder.AppendLine("Punishment:");
                     builder.AppendLine(punishmentToLog);

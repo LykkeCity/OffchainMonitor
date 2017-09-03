@@ -11,9 +11,10 @@ using System;
 namespace SqlliteRepositories.Migrations
 {
     [DbContext(typeof(OffchainMonitorContext))]
-    partial class OffchainMonitorContextModelSnapshot : ModelSnapshot
+    [Migration("20170903035120_CommitmentPunishedFlagAdded")]
+    partial class CommitmentPunishedFlagAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
