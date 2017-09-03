@@ -22,16 +22,34 @@ Api is accessable at /swagger/v1/swagger.json endpoint
 
 *   lightning.network related material for example: https://lightning.network/lightning-network-paper.pdf
 
+## Configuration
+
+Currently the OffchainMonitorRunner reads its setting through an environment variable called OffchainMonitorSettings. This is a json string like {  "NetworkType": 1,  "RPCUsername": "xxx",  "RPCPassword": "xxx",  "RPCServerIpAddress": "xxx",  "QBitNinjaBaseUrl": "xxx"} which should be configured according to the environment. (0 is for mainnet and 1 is for testnet).
+
 ## Testing
 
 BlockchainStateManager is used to put a bitcoin daemon of regtest mode in a known state, so things could be tested.
-Running BlockchainStateManager should be practiced in Administrator mode (it is available for windows only), since it currently stops/starts iis service.
 
 ### Required software for testing
 
 Bitcoin daemon in regtest mode (Supporting SegWit, version > 0.13) , Azure storage emulator, QBitNinja, QBitNinja.Listener.Console, Sql Server (Express edition would work), colorcore ( https://github.com/OpenAssets/colorcore )
 
 *   Azure storage emulator, QBitNinja, colorcore should be be running before test running
-*   The BlockchainStateManager should be run in administrator mode since there is a management code for IIS. This includes visual studio if testing is being done through it.
+*   The BlockchainStateManager should be run in administrator mode since there is a management code for IIS (which stops/starts iis service, and is available for windows only). This includes visual studio if testing is being done through it.
 
+### Testing Procedure
 
+In order to run the application, besides starting in in the Administrator mode, following should also be configured:
+*   QBitNinja.Listener.Console: To index newly generated blocks and transactions
+*   QBitNinja: To be able to query blockchain data through its API
+*   Azure Storage Emulator: To enable local storage for QBitNinja
+*   Colorcore (https://github.com/OpenAssets/colorcore): To enable issuing of assets and transfering them (Currently the development is for bitcoin itself)
+*   It is needed to adapt App.config to the running enironment
+
+After the BlockchainStateManager run finished, a file named log.txt will be created. (It will probably take some minutes, sometimes, it may terminate in between which needs to close bitcoin daemon and QBitNinja.Listener.Console and run it again, it is not stable enough).
+The log.txt will contain 3 transactions:
+*   The unsigned commitment which is signed by client and given to Lykke. If Lykke revokes this transaction by giving the private key to client, the client can create the respective punishment and submit the commitment and punishment to Lykke. This commitment will not have Lykke signature on it because client does not have access to Lykke private key, but since it is a segwit transaction it could be monitored by using its tx hash which is independent of signatures.
+*   Punishment transaction, which is used to be submitted alongside the above parameter to monitoring service.
+*   The signed commitment transaction, which is used to be submitted to blockchain using bitcoin-cli command for example.
+
+After above 3 transactions were obtained the monitor service itself could be executed (for example using "dotnet OffchainMonitorRunner.dll"). At this stage the signed version could be broadcasted to network using bitcoin-cli command line, and the monitor should detect it and broadcast the punishment.
