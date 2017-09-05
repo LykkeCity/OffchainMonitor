@@ -1,6 +1,6 @@
 # Offchain Monitor
 
-[![Build status](https://ci.appveyor.com/api/projects/status/jjncv8d8i8482q68?svg=true)](https://ci.appveyor.com/project/lykke/offchainmonitor)
+[![Build status](https://teamcity.lykkex.net/app/rest/builds/buildType:(id:OffchainMonitor_BUILD)/statusIcon)](http://teamcity.lykkex.net/viewType.html?buildTypeId=OffchainMonitor_BUILD&guest=1)
 
 ## Summary
 
