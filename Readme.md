@@ -26,6 +26,22 @@ Api is accessable at /swagger/v1/swagger.json endpoint
 
 Currently the OffchainMonitorRunner reads its setting through an environment variable called OffchainMonitorSettings. This is a json string like {  "NetworkType": 1,  "RPCUsername": "xxx",  "RPCPassword": "xxx",  "RPCServerIpAddress": "xxx",  "QBitNinjaBaseUrl": "xxx"} which should be configured according to the environment. (0 is for mainnet and 1 is for testnet).
 
+The configuration for bitcoin daemon should be like following:
+
+```
+regtest=1
+prematurewitness=1
+server=1
+listen=1
+port=18333
+rpcallowip=0.0.0.0/0
+rpcport=18332
+rpcuser=xxx
+rpcpassword=xxx
+datadir=D:\Bitcoin\datadir
+txindex=1
+```
+
 ## Testing
 
 BlockchainStateManager is used to put a bitcoin daemon of regtest mode in a known state, so things could be tested.
