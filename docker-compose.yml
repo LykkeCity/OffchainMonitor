@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  offchainmonitorrunner:
+    image: offchainmonitorrunner
+    build:
+      context: ./OffchainMonitorRunner
+      dockerfile: Dockerfile
