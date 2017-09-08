@@ -72,6 +72,12 @@ After above 3 transactions were obtained the monitor service itself could be exe
 
 ## Docker
 
+### Requirements
+
+It is required to have access to A- a QBit.Ninja instance (for exapmle http://api.qbit.ninja/ to explore blockchain) and B- The RPC endpoint of a Bitcoin Daemon instance (to broadcast the punishment).
+
+### Running
+
 To run the docker image, a command like following could be adopted and executed:
 
 ```
