@@ -69,3 +69,31 @@ The log.txt will contain 3 transactions:
 *   The signed commitment transaction, which is used to be submitted to blockchain using bitcoin-cli command for example.
 
 After above 3 transactions were obtained the monitor service itself could be executed (for example using "dotnet OffchainMonitorRunner.dll"). At this stage the signed version could be broadcasted to network using bitcoin-cli command line, and the monitor should detect it and broadcast the punishment.
+
+## Docker
+
+### Requirements
+
+It is required to have access to A- a QBit.Ninja instance (for exapmle http://api.qbit.ninja/ to explore blockchain) and B- The RPC endpoint of a Bitcoin Daemon instance (to broadcast the punishment).
+
+## Getting the image
+
+The image is publically available from http://hub.docker.com (For example offchainmonitorrunner could be searched). To pull the image and use it, a command like following could be used:
+
+```
+docker pull lykkedev/offchainmonitorrunner:dev
+```
+
+### Running
+
+To run the docker image, a command like following could be adopted and executed:
+
+```
+docker run -e OffchainMonitorSettings="{  'NetworkType': 0,  'RPCUsername':'{BitcoinDaemonUsername}', 'RPCPassword': '{BitcoinDaemonPassword}',  'RPCServerIpAddress': '{BitcoinDaemonIp}',  'QBitNinjaBaseUrl': '{QBitNinjaAddress}'}" -p {HostBinding}:5000 {DockerImageName} port=5000
+```
+
+An example for test of above is:
+
+```
+docker run -e OffchainMonitorSettings="{  'NetworkType': 1,  'RPCUsername':'xxx', 'RPCPassword': 'xxx',  'RPCServerIpAddress': '192.168.0.125',  'QBitNinjaBaseUrl': 'http://192.168.0.125:85/'}" -p 127.0.0.1:502:5000 lykkedev/offchainmonitorrunner:dev port=5000
+```
