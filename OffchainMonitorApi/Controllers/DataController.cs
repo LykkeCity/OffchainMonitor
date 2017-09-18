@@ -24,7 +24,13 @@ namespace OffchainMonitorApi.Controllers
             settingsRepository = _settingsRepository;
         }
 
-        // CommitmentTxId = (new Transaction(commitment)).GetHash().ToString(),
+        /// <summary>
+        /// Adds monitoring of blockchain for the passed commitment, if detected on blockchain, it would be punished by the passed punishment.
+        /// </summary>
+        /// <param name="commitment">The commitment to monitor on blockchain, it is probably an unsigned segwit transaction which is signed only by the party requesting monitor. Actually what is monitored on blockchain is the TxId of this segwit transaction which is independent of signatures.</param>
+        /// <param name="punishment">The punishment to broadcast, when the commitment was detected on blockchain.</param>
+        /// <param name="overwrite">If the TxId of the passed commitment is already present in DB, this flag specifies whether to overwrite it or not.</param>
+        /// <returns></returns>
         [HttpGet("AddCommitmentPunishmentPair")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -85,6 +91,55 @@ namespace OffchainMonitorApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns the commitments which are being monitored.
+        /// </summary>
+        /// <param name="from">The start number of records to return.</param>
+        /// <param name="to">The end number of records to return (non-iclusive). -1 means to return all records to the end.</param>
+        /// <returns>A json array from monitored commitments, including the punishments and whether the commitment has been punished or not.</returns>
+        [HttpGet("ListMonitoredCommitments")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> ListMonitoredCommitments([FromQuery]int from, [FromQuery]int to)
+        {
+            if (from < 0)
+            {
+                return BadRequest("From should not be negative.");
+            }
+
+            if (to != -1 && to <= from)
+            {
+                return BadRequest("To should be bigger than from");
+            }
+            try
+            {
+                using (OffchainMonitorContext context = new OffchainMonitorContext())
+                {
+                    var records = (from record in context.Commitments
+                                  select new { CommtmentTxId = record.CommitmentTxId, Commitment = record.Commitment, Punishment = record.Punishment, Punished = record.Punished }).Skip(from);
+
+                    if(to != -1)
+                    {
+                        records = records.Take(to - from);
+                    }
+
+                    if (records.Count() > 0)
+                    {
+                        return Json(records.ToList());
+                    }
+                    else
+                    {
+                        return BadRequest("No records to return.");
+                    }
+                }
+            }
+            catch (Exception exp)
+            {
+                throw exp;
+            }
+        }
+
         // Until SegWit acivation since punishment requires commitment id, and it is not available until hub broadcasts it, this is not usable
         // After segwit activation commitment id will be available independent of its signing
         [HttpGet("AddCommitmentPunishmentPairOldDesign")]
@@ -129,11 +184,11 @@ namespace OffchainMonitorApi.Controllers
                                 var existingMultisigOutput = (from o in context.MultisigOutputs
                                                               where o.TransactionId == prevOut.Hash.ToString() && o.OutputNumber == prevOut.N
                                                               select o).FirstOrDefault();
-                                if(existingMultisigOutput == null)
+                                if (existingMultisigOutput == null)
                                 {
                                     var newMultisigOutput = new MultisigOutputEntity();
                                     newMultisigOutput.TransactionId = prevOut.Hash.ToString();
-                                    newMultisigOutput.OutputNumber = (int) prevOut.N;
+                                    newMultisigOutput.OutputNumber = (int)prevOut.N;
                                     newMultisigOutput.LastSeen = DateTime.UtcNow;
                                     await context.MultisigOutputs.AddAsync(newMultisigOutput);
 
@@ -148,7 +203,7 @@ namespace OffchainMonitorApi.Controllers
                             }
                         }
 
-                        if(!found)
+                        if (!found)
                         {
                             return BadRequest(string.Format("The provide transaction does not pay to multisig:{0}", multisig));
                         }

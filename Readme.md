@@ -14,7 +14,7 @@ This app is designed to be hosted using Docker.
 
 ## Api
 
-Api is accessable at /swagger/v1/swagger.json endpoint
+Api is accessable at /swagger endpoint
 
 ## Related material
 
