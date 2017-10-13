@@ -7,9 +7,7 @@
     <OutputType>Exe</OutputType>
     <PackageId>OffchainMonitorRunner</PackageId>
     <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

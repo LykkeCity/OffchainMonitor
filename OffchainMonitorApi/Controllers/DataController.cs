@@ -6,6 +6,7 @@ using OffchainMonitorApi.Models;
 using SqlliteRepositories.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,6 +23,17 @@ namespace OffchainMonitorApi.Controllers
         {
             bitcoinTransactionService = _bitcoinTransactionService;
             settingsRepository = _settingsRepository;
+        }
+
+        [HttpGet("GetVersion")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetVersion()
+        {
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+            string version = fvi.FileVersion;
+            return Ok(version);
         }
 
         /// <summary>
