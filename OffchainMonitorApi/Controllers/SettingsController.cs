@@ -15,6 +15,7 @@ namespace OffchainMonitorApi.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
+        [Obsolete]
         public async Task<IActionResult> SetSettingsValue([FromQuery]string key, [FromQuery]string value)
         {
             key = key.Trim();
@@ -63,6 +64,7 @@ namespace OffchainMonitorApi.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
+        [Obsolete]
         public async Task<IActionResult> GetSettingsValue([FromQuery]string key)
         {
             key = key.Trim();

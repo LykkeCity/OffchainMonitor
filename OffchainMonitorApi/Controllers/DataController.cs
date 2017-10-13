@@ -158,6 +158,7 @@ namespace OffchainMonitorApi.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
+        [Obsolete]
         public async Task<IActionResult> AddCommitmentPunishmentPairOldDesign([FromQuery]string commitment,
             [FromQuery]string punishment)
         {
@@ -234,6 +235,7 @@ namespace OffchainMonitorApi.Controllers
         [HttpPost("AddFee")]
         [ProducesResponseType(200)]
         [ProducesResponseType(500)]
+        [Obsolete]
         public async Task<IActionResult> AddFee([FromBody]AddFeeRequest request)
         {
             var checkResult = request.CheckModel();
