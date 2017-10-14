@@ -31,7 +31,7 @@ namespace OffchainMonitorApi.Functions
             rpcBitcoinClient = _rpcBitcoinClient;
         }
 
-        [TimerTrigger("00:00:10")]
+        [TimerTrigger("00:02:00")]
         public async Task CheckCommitmentBroadcast()
         {
             using (OffchainMonitorContext context = new OffchainMonitorContext())

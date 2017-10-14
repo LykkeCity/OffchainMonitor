@@ -1,4 +1,5 @@
-﻿using Core.Repositories.Settings;
+﻿using Core.Bitcoin;
+using Core.Repositories.Settings;
 using LkeServices.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
@@ -17,12 +18,14 @@ namespace OffchainMonitorApi.Controllers
     {
         IBitcoinTransactionService bitcoinTransactionService;
         ISettingsRepository settingsRepository;
+        private readonly RpcConnectionParams connectionParams;
 
         public DataController(ISettingsRepository _settingsRepository,
-            IBitcoinTransactionService _bitcoinTransactionService) : base()
+            IBitcoinTransactionService _bitcoinTransactionService, RpcConnectionParams _connectionParams) : base()
         {
             bitcoinTransactionService = _bitcoinTransactionService;
             settingsRepository = _settingsRepository;
+            connectionParams = _connectionParams;
         }
 
         [HttpGet("GetVersion")]
@@ -35,6 +38,18 @@ namespace OffchainMonitorApi.Controllers
             string version = fvi.FileVersion;
             return Ok(version);
         }
+
+        /*
+        // For debugging only
+        [HttpGet("GetConnectionParams")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetConnectionParams()
+        {
+            string ret = string.Format("Network: {0}, Username: {1}, Password: {2}, IP: {3}", connectionParams.Network.ToString(), connectionParams.UserName, connectionParams.Password, connectionParams.IpAddress);
+            return Ok(ret);
+        }
+        */
 
         /// <summary>
         /// Adds monitoring of blockchain for the passed commitment, if detected on blockchain, it would be punished by the passed punishment.

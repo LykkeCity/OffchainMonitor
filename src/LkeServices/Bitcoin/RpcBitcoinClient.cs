@@ -19,7 +19,8 @@ namespace LkeServices.Bitcoin
         public RpcBitcoinClient(RpcConnectionParams connectionParams, IBroadcastedTransactionRepository broadcastedTransactionRepository)
         {
             _broadcastedTransactionRepository = broadcastedTransactionRepository;
-            _client = new RPCClient(new NetworkCredential(connectionParams.UserName, connectionParams.Password), connectionParams.IpAddress, connectionParams.Network);
+            _client = new RPCClient(new RPCCredentialString { UserPassword = new NetworkCredential(connectionParams.UserName, connectionParams.Password) },
+                connectionParams.IpAddress, connectionParams.Network);
         }
 
         public async Task BroadcastTransaction(Transaction tr, Guid transactionId)
